@@ -14,6 +14,10 @@ The idea of a custom PCB was to save weight. A ready-made board already does tha
 
 The only soldering is two battery wires and a switch.
 
+### Optional carrier board
+
+If you want it tidier than loose wires, [`pcb/`](pcb/) has a small two-layer carrier board that the XIAO solders onto. It holds the switch and the battery wires and adds about 1.5 g with the switch. It passes KiCad's design rule check but has not been fabricated yet. With the carrier, the housing grows to about 32 × 25 mm.
+
 ## Parts
 
 | Part | Notes | Approx. weight |

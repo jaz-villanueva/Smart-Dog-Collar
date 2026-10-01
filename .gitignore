@@ -96,3 +96,7 @@ data/context_state.json
 
 # Recordings (video of your home)
 data/recordings/
+
+# PCB renders are tracked
+!hardware/pcb/*.png
+*.kicad_prl

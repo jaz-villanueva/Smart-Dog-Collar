@@ -1,0 +1,17 @@
+Part,Model,Qty,Price_USD,Price_PHP,Supplier,Link,Notes
+Microcontroller,ESP32-WROOM-32,1,8.00,400,Personal,Already owned,BLE + WiFi 160MHz dual-core
+IMU 6-Axis,MPU6050,1,5.00,250,Shopee.ph,Search MPU6050,Accelerometer + Gyroscope I2C
+Microphone,INMP441 I2S,1,3.00,150,Shopee.ph,Search INMP441,I2S interface bark and whine detection
+LiPo Battery,1000mAh 3.7V,1,6.00,300,Shopee.ph,Search 1000mAh LiPo,Buy one with a built-in protection circuit
+Charging Module,TP4056 with protection,1,2.00,100,Shopee.ph,Search TP4056 protection,6-pad version with OUT+ and OUT-
+3.3V Regulator,HT7333 or MCP1700-3302,2,1.00,50,Shopee.ph,Search HT7333,Low-dropout regulator between battery and ESP32
+USB-C Connector,USB-C Breakout,1,2.00,100,Shopee.ph,Search USB-C breakout,Charging port
+Capacitor Kit,0.1µF 10µF Assort,1,3.00,150,Shopee.ph,Search capacitor kit,Decoupling caps
+Breadboard,Half Breadboard,1,5.00,250,Personal,Already owned,Prototyping
+Perfboard,70x50mm,1,5.00,250,Shopee.ph,Search perfboard,Carrier board
+3D Filament,PETG 250g,1,5.00,250,Lazada.com.ph,Search PETG filament,Collar housing
+Neoprene Backing,Fabric Sheet,1,3.00,150,Shopee.ph,Search neoprene fabric,Comfort + water resistance
+Velcro Straps,Adhesive Strips,1,2.00,100,Shopee.ph,Search velcro strips,Adjustable closure
+Jumper Wires,M-M 40pc,1,2.00,100,Personal,Already owned,Breadboard connections
+TOTAL (New Purchase),,,37.00,1850,,,"Excludes ESP32, breadboard and jumper wires (already owned)"
+TOTAL WITH CONTINGENCY (20%),,,44.40,2220,,,

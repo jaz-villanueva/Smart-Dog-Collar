@@ -1,0 +1,12 @@
+{
+  "playful":  ["I want to play!", "Let's run!"],
+  "sleepy":   ["I want to sleep.", "I need a nap."],
+  "hungry":   ["I'm hungry!", "Is it dinner time yet?"],
+  "potty":    ["I need to go outside!", "I need to pee!"],
+  "sad":      ["I'm sad.", "I feel down."],
+  "lonely":   ["I'm lonely.", "Come back, I miss you."],
+  "anxious":  ["I'm worried.", "Something's wrong."],
+  "alert":    ["Someone's here!", "What was that?"],
+  "content":  ["All is well.", "Pet me?"],
+  "stressed": ["This is too much.", "Help!"]
+}

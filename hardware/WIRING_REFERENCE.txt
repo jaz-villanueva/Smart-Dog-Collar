@@ -1,0 +1,108 @@
+===============================================
+DOG MOOD COLLAR - WIRING REFERENCE
+===============================================
+
+ESP32-WROOM-32 PIN ASSIGNMENTS:
+
+I2C SENSOR (I2C Bus: SDA=21, SCL=22)
+------------------------------------
+MPU6050 (IMU - Accel + Gyro):
+  VCC  → ESP32 3.3V
+  GND  → ESP32 GND
+  SDA  → ESP32 GPIO21 (I2C SDA)
+  SCL  → ESP32 GPIO22 (I2C SCL)
+  AD0  → GND (sets I2C address to 0x68)
+  INT  → (not used)
+
+  Most MPU6050 breakout boards already carry I2C pull-up resistors.
+  Add 10kΩ from SDA and SCL to 3.3V only if the sensor is not detected.
+
+I2S AUDIO (Microphone)
+----------------------
+INMP441 (I2S MEMS Microphone):
+  VDD  → ESP32 3.3V
+  GND  → ESP32 GND
+  SD   → ESP32 GPIO32 (I2S data)
+  WS   → ESP32 GPIO25 (I2S word select)
+  SCK  → ESP32 GPIO33 (I2S clock)
+  L/R  → GND (selects the left channel, which the firmware reads)
+
+POWER
+-----
+!! Never connect the LiPo to the TP4056 IN+/IN- pads. Those carry 5V from
+!! USB. A LiPo cell connected to 5V can overheat and catch fire.
+
+Use a TP4056 module WITH protection (6 pads: IN+, IN-, B+, B-, OUT+, OUT-).
+
+USB-C Port:
+  VBUS → TP4056 IN+
+  GND  → TP4056 IN-
+
+LiPo Battery (1000mAh 3.7V):
+  +    → TP4056 B+
+  -    → TP4056 B-
+
+TP4056 → 3.3V regulator → ESP32:
+  OUT+ → regulator VIN        (3.0–4.2V from the battery)
+  OUT- → regulator GND
+  regulator VOUT → ESP32 3V3 pin
+  regulator GND  → ESP32 GND
+
+  Use a low-dropout 3.3V regulator such as the HT7333 or MCP1700-3302.
+  Do not feed the battery into the ESP32 VIN pin: the dev board's own
+  regulator needs about 1V of headroom and the 3.3V rail will sag.
+
+  When powering through the 3V3 pin, unplug the collar's battery before
+  connecting the ESP32's own USB port for flashing.
+
+DECOUPLING CAPACITORS
+---------------------
+0.1µF capacitor near VCC → GND of each sensor
+10µF capacitor on the regulator output
+
+===============================================
+DEBUGGING CHECKLIST
+===============================================
+
+Before powering on:
+  ☐ Battery is on B+/B-, not IN+/IN-
+  ☐ All GNDs connected together
+  ☐ Sensors powered from 3.3V, not 5V
+  ☐ No shorts between adjacent wires
+
+Power-on checks (Serial Monitor, 115200 baud):
+  ☐ "[MPU6050] OK" and "[INMP441] OK" appear
+  ☐ [DATA] lines appear once a second with flags=0x03
+  ☐ Accel reads about 9.8 m/s2 on one axis when the collar lies still
+  ☐ rms rises when you clap near the microphone
+
+  rms stays at 0 → swap I2S_CHANNEL_FMT_ONLY_LEFT for ONLY_RIGHT in the
+  firmware, or check that L/R is tied to GND.
+
+BLE verification:
+  ☐ Phone BLE scanner finds "DogMood-Collar"
+  ☐ ml/ble_data_logger.py connects and "?" shows no growing dropped count
+
+===============================================
+I2C ADDRESSES
+===============================================
+
+Sensor              Default Address  Alt Address
+MPU6050             0x68            0x69 (if AD0=VCC)
+
+===============================================
+POWER BUDGET (estimates, not yet measured)
+===============================================
+
+Component           Current (mA)
+ESP32 with BLE on   ~80–130
+MPU6050             ~4
+INMP441             ~1.5
+─────────────────────────────────
+Total (running):    ~90–135 mA
+
+1000mAh at ~110mA ≈ 9 hours theoretical. Measure the real figure
+before quoting battery life.
+
+===============================================
+UPDATED: October 2026 | By: Jaz Villanueva

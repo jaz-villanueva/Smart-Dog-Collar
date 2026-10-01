@@ -72,10 +72,29 @@ function onPacket(packet) {
 
 // ---------------------------------------------------------------- Mood
 
+// Recorded clips of each phrase (see ml/make_voice_clips.py), so he always has
+// the same voice. A phrase without a clip falls back to the phone's own voice.
+const clips = {};
+let playing = null;
+
+fetch('voice/index.json').then((response) => response.json()).then((index) => {
+  for (const [phrase, file] of Object.entries(index)) {
+    clips[phrase] = new Audio(`voice/${file}`);
+    clips[phrase].preload = 'auto';
+  }
+}).catch(() => {});
+
 function say(text) {
-  if (!$('speak').checked || !('speechSynthesis' in window)) return;
-  speechSynthesis.cancel();
-  speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+  if (!$('speak').checked) return;
+  playing?.pause();
+  if (clips[text]) {
+    playing = clips[text];
+    playing.currentTime = 0;
+    playing.play().catch(() => {});
+  } else if ('speechSynthesis' in window) {
+    speechSynthesis.cancel();
+    speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+  }
 }
 
 function showMood({ mood, confidence, sure }) {

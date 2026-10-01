@@ -1,0 +1,23 @@
+{
+  "I want to play!": "playful_1.wav",
+  "Let's run!": "playful_2.wav",
+  "I want to sleep.": "sleepy_1.wav",
+  "I need a nap.": "sleepy_2.wav",
+  "I'm hungry!": "hungry_1.wav",
+  "Is it dinner time yet?": "hungry_2.wav",
+  "I need to go outside!": "potty_1.wav",
+  "I need to pee!": "potty_2.wav",
+  "I'm sad.": "sad_1.wav",
+  "I feel down.": "sad_2.wav",
+  "I'm lonely.": "lonely_1.wav",
+  "Come back, I miss you.": "lonely_2.wav",
+  "I'm worried.": "anxious_1.wav",
+  "Something's wrong.": "anxious_2.wav",
+  "Someone's here!": "alert_1.wav",
+  "What was that?": "alert_2.wav",
+  "All is well.": "content_1.wav",
+  "Pet me?": "content_2.wav",
+  "This is too much.": "stressed_1.wav",
+  "Help!": "stressed_2.wav",
+  "I can't hear the collar.": "lost_1.wav"
+}

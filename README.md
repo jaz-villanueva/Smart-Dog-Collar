@@ -86,6 +86,7 @@ dog-mood-collar-vlog/
 │   ├── ble_data_logger.py            # Record sensor data + label moods
 │   ├── train_mood_model.py           # Train and test the classifier
 │   ├── live_predict.py               # Say his mood live
+│   ├── make_voice_clips.py           # Record the phrases as sound clips for the app
 │   ├── export_app_model.py           # Export a trained model for the web app
 │   ├── make_starter_dataset.py       # Writes the synthetic starter data
 │   ├── starter_model/                # Model trained on the synthetic data

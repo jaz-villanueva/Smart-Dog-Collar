@@ -23,6 +23,10 @@ A one-month vlog project building a wearable dog mood detector using an ESP32, a
 
 The list and the phrases for each mood live in [`ml/moods.json`](ml/moods.json). Edit that one file to add, remove or reword them.
 
+![Exploded view of the wearable](docs/images/wearable_exploded.svg)
+
+Shopping list: [`docs/PH_SHOPPING_LIST.md`](docs/PH_SHOPPING_LIST.md).
+
 ### What is built and what is not
 
 | Part | State |
@@ -59,10 +63,13 @@ dog-mood-collar-vlog/
 │   └── WIRING_REFERENCE.txt          # Bench prototype connections and checks
 ├── data/                             # Your recordings (git-ignored)
 ├── app/                              # Flutter app (to be added)
-└── docs/                             # Checklists written for the first design*
+└── docs/
+    ├── PH_SHOPPING_LIST.md           # What to buy, and what not to
+    ├── images/                       # Drawings
+    └── ...                           # Older checklists*
 ```
 
-*\*The files in `docs/` still describe the original four-sensor design and need updating.*
+*\*`BUILD_CHECKLIST.md`, `TROUBLESHOOTING.md` and `FUTURE_IMPROVEMENTS.md` still describe the original four-sensor design and need updating.*
 
 ---
 

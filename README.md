@@ -30,6 +30,20 @@ The list and the phrases for each mood live in [`ml/moods.json`](ml/moods.json).
 
 Shopping list: [`docs/PH_SHOPPING_LIST.md`](docs/PH_SHOPPING_LIST.md).
 
+### Carrier board (optional)
+
+A small two-layer board the XIAO solders onto, holding the switch and battery. It passes KiCad's design rule check but has not been fabricated yet. Details, Gerbers and assembly steps are in [`hardware/pcb/`](hardware/pcb/).
+
+Assembled, from above and below. The XIAO, switch and battery are simplified block models, so sizes are nominal and the positions of parts on the XIAO are approximate:
+
+![Assembled carrier board from above: XIAO and slide switch](hardware/pcb/render_assembled_top.png)
+![Assembled carrier board from below: battery and its leads](hardware/pcb/render_assembled_bottom.png)
+
+The bare board, top and bottom:
+
+![Bare carrier board, top](hardware/pcb/render_top.png)
+![Bare carrier board, bottom](hardware/pcb/render_bottom.png)
+
 ### What is built and what is not
 
 | Part | State |

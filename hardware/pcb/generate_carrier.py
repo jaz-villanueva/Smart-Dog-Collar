@@ -127,6 +127,42 @@ def text(content, x, y, layer, size=0.8, angle=0):
     board.Add(item)
 
 
+# ---------------------------------------------------------------- 3D models
+# Simplified block models so the 3D view shows the assembled unit. They are
+# for illustration: sizes are nominal and part positions on the XIAO are
+# approximate. Each box is (x0, y0, x1, y1, z0, z1, colour) in board
+# coordinates, with z measured up from the top surface of the carrier.
+MODELS = Path(__file__).resolve().parent / "models"
+BLACK, SILVER, GOLD = (0.08, 0.08, 0.09), (0.50, 0.51, 0.53), (0.83, 0.66, 0.22)
+DARK, RED, YELLOW, BLUE = (0.2, 0.2, 0.22), (0.75, 0.1, 0.1), (0.9, 0.72, 0.15), (0.25, 0.4, 0.6)
+BOX_FACES = [(0, 2, 1), (0, 3, 2), (4, 5, 6), (4, 6, 7), (0, 1, 5), (0, 5, 4),
+             (1, 2, 6), (1, 6, 5), (2, 3, 7), (2, 7, 6), (3, 0, 4), (3, 4, 7)]
+
+
+def add_model(fp, name, boxes):
+    """Write boxes as a VRML file and attach it to the footprint."""
+    unit = 2.54  # KiCad reads VRML in units of 0.1 inch
+    shapes = []
+    for x0, y0, x1, y1, z0, z1, (r, g, b) in boxes:
+        # board y points down the screen; model y points up
+        corners = [(x0, -y1, z0), (x1, -y1, z0), (x1, -y0, z0), (x0, -y0, z0),
+                   (x0, -y1, z1), (x1, -y1, z1), (x1, -y0, z1), (x0, -y0, z1)]
+        points = ", ".join(f"{x / unit:.4f} {y / unit:.4f} {z / unit:.4f}" for x, y, z in corners)
+        faces = ", ".join(f"{i} {j} {k} -1" for i, j, k in BOX_FACES)
+        shapes.append(
+            "Shape { appearance Appearance { material Material { "
+            f"diffuseColor {r} {g} {b} specularColor 0.3 0.3 0.3 shininess 0.4 }} }} "
+            f"geometry IndexedFaceSet {{ solid FALSE coord Coordinate {{ point [ {points} ] }} "
+            f"coordIndex [ {faces} ] }} }}")
+    MODELS.mkdir(exist_ok=True)
+    lines = ["#VRML V2.0 utf8", *shapes, ""]
+    (MODELS / f"{name}.wrl").write_text(chr(10).join(lines), encoding="utf-8")
+
+    model = pcbnew.FP_3DMODEL()
+    model.m_Filename = "${KIPRJMOD}/models/" + f"{name}.wrl"
+    fp.Models().push_back(model)
+
+
 # ---------------------------------------------------------------- XIAO (U1)
 # Soldered flat onto the carrier by its 14 edge pads. Pads 19 and 20 are the
 # battery pads on the XIAO's underside; here they are plated holes, so they
@@ -142,6 +178,15 @@ hole_pad(xiao, 19, *VBAT_PAD, 2.4, 1.3, 0.8, VBAT)
 hole_pad(xiao, 20, *GND_PAD, 2.4, 1.3, 0.8, GND)
 rectangle(xiao, pcbnew.F_Fab, 0, -21.05, 17.8, -0.1, 0.1)
 rectangle(xiao, pcbnew.F_CrtYd, -0.8, -21.3, 18.6, 0.15)
+add_model(xiao, "xiao_nrf52840_sense", [
+    (0, -21.05, 17.8, -0.1, 0, 1.0, BLACK),            # the XIAO's own circuit board
+    (4.4, -22.4, 13.4, -15.1, 1.0, 4.2, SILVER),       # USB-C connector
+    (2.6, -14.4, 15.2, -4.4, 1.0, 2.7, SILVER),        # shield can over the radio
+    (11.0, -3.0, 15.4, -1.4, 1.0, 1.7, BLUE),          # antenna
+    (1.6, -3.6, 4.6, -1.2, 1.0, 2.0, GOLD),            # microphone
+    (6.0, -3.5, 8.6, -1.1, 1.0, 1.8, DARK),            # motion sensor
+    (14.6, -17.6, 16.6, -15.8, 1.0, 1.9, DARK),        # reset button
+])
 
 # ---------------------------------------------------------------- Switch (SW1)
 # SS12D00-type slide switch, three pins in a row. Middle pin is the common.
@@ -152,6 +197,10 @@ hole_pad(switch, 2, SW_X, SW_Y[1], 1.8, 1.8, 0.9, BATP)
 hole_pad(switch, 3, SW_X, SW_Y[2], 1.8, 1.8, 0.9)
 rectangle(switch, pcbnew.F_Fab, -7.0, -18.3, -3.3, -9.8, 0.1)
 rectangle(switch, pcbnew.F_CrtYd, -7.2, -18.45, -3.1, -9.65)
+add_model(switch, "ss12d00_switch", [
+    (-7.0, -18.3, -3.3, -9.8, 0, 3.5, SILVER),         # body
+    (-5.9, -17.0, -4.4, -15.0, 3.5, 6.5, BLACK),       # lever, at the ON end
+])
 
 # ---------------------------------------------------------------- Battery (J1)
 battery = footprint("J1", "LiPo battery wires")
@@ -159,6 +208,15 @@ BAT_PLUS, BAT_MINUS = (-7.6, -7.6), (-4.2, -7.6)
 hole_pad(battery, 1, *BAT_PLUS, 1.9, 1.9, 1.0, BATP)
 hole_pad(battery, 2, *BAT_MINUS, 1.9, 1.9, 1.0, GND)
 rectangle(battery, pcbnew.F_CrtYd, -8.8, -8.8, -3.0, -6.4)
+UNDER = -BOARD_THICKNESS  # the battery lies against the back of the carrier
+add_model(battery, "lipo_401020", [
+    (-1.0, -16.5, 19.0, -6.5, UNDER - 4.3, UNDER - 0.3, SILVER),     # cell, 20 x 10 x 4
+    (-1.0, -16.5, 2.0, -6.5, UNDER - 4.35, UNDER - 0.25, YELLOW),    # tape over its protection circuit
+    (-7.9, -7.0, -1.0, -6.4, UNDER - 1.4, UNDER - 0.8, RED),         # + lead
+    (-7.9, -7.6, -7.3, -6.4, UNDER - 1.4, UNDER - 0.8, RED),
+    (-4.5, -8.6, -1.0, -8.0, UNDER - 1.4, UNDER - 0.8, BLACK),       # - lead
+    (-4.5, -8.6, -3.9, -7.6, UNDER - 1.4, UNDER - 0.8, BLACK),
+])
 
 # ---------------------------------------------------------------- Expansion (J2)
 # Optional I2C port for a future sensor. Leave unpopulated otherwise.

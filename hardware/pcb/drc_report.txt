@@ -1,5 +1,5 @@
 ** Drc report for dogmood_carrier.kicad_pcb **
-** Created on 2026-10-01T13:37:53 **
+** Created on 2026-10-01T13:48:31 **
 ** Report includes: Errors, Warnings, Exclusions **
 
 ** Found 0 DRC violations **

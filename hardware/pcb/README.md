@@ -2,6 +2,11 @@
 
 A small two-layer board that the XIAO solders onto. It replaces the loose battery wires and switch of the hand-wired build with something tidier and sturdier.
 
+![Assembled carrier board from above](render_assembled_top.png)
+![Assembled carrier board from below](render_assembled_bottom.png)
+
+The XIAO, switch and battery above are simplified block models from [`models/`](models/), for illustration only: sizes are nominal and the positions of parts on the XIAO are approximate. The bare board:
+
 ![Top of the carrier board](render_top.png)
 ![Bottom of the carrier board](render_bottom.png)
 

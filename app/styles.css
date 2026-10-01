@@ -116,6 +116,17 @@ button.primary, button[aria-pressed="true"] { background: var(--accent); border-
 .history li { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); }
 .history time, .history .empty { color: var(--muted); font-size: 0.85rem; }
 
+.view { display: block; width: 100%; height: auto; border-radius: 18px; border: 1px solid var(--line); background: var(--card); }
+.view + .detail { margin: 8px 0 12px; }
+.steps { margin: 0; padding-left: 1.2em; }
+.steps li { margin-bottom: 6px; }
+.chips { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
+.chips button { display: flex; justify-content: space-between; align-items: baseline; }
+.chips small { font-size: 0.8rem; opacity: 0.8; }
+button:disabled { opacity: 0.45; cursor: default; }
+button.wide { width: 100%; }
+code { font-size: 0.9em; }
+
 .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .facts { margin: 20px 0 0; }
 .facts div { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--line); }
@@ -128,7 +139,7 @@ nav {
   position: sticky;
   bottom: 0;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   background: var(--card);
   border-top: 1px solid var(--line);
   padding-bottom: env(safe-area-inset-bottom);

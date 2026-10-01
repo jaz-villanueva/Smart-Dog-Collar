@@ -108,3 +108,6 @@ data/recordings/
 
 # App icons are tracked
 !app/icons/*.png
+
+# Recordings saved from the phone app
+data/phone/

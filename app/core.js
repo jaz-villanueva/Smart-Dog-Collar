@@ -1,4 +1,4 @@
-// TinyTalk core: packet decoding, window features and the mood model.
+// TinyTalk core: packet decoding, window features, the mood model and recording rows.
 // No DOM here, so check_parity.mjs can run it under Node against the Python scripts.
 //
 // decodePacket mirrors ml/collar.py and windowFeatures mirrors ml/features.py.
@@ -97,7 +97,8 @@ function bandShare(power, n, rateHz, low, high, floor = 0.5) {
 
 /**
  * Features of one 8-second window.
- * packets: WINDOW_PACKETS decoded packets, oldest first.
+ * packets: WINDOW_PACKETS decoded packets, oldest first. Each may carry
+ *   cam: { x, y, w, h, area, motion } from the cage camera, or null.
  * context: { hour, minsSinceFed, minsSincePotty, ownerAway }; null where unknown.
  */
 export function windowFeatures(packets, context) {
@@ -153,16 +154,30 @@ export function windowFeatures(packets, context) {
   }
   shape.forEach((value, band) => { f[`vocal_band_${band}`] = value; });
 
-  // No heart-rate strap or cage camera in the app
+  // No heart-rate strap in the app
   f.hr_mean = f.hr_std = f.hrv_rmssd = MISSING;
-  for (const name of ['cam_x', 'cam_y', 'cam_aspect', 'cam_area', 'cam_motion_mean',
-    'cam_motion_std', 'cam_travel']) f[name] = MISSING;
 
   // Breathing while resting: slow rocking on the rotation axis that moves most
   const axes = [3, 4, 5].map((axis) => samples.map((s) => s[axis]));
   const variances = axes.map((a) => std(a) ** 2);
   const busiest = axes[variances.indexOf(max(variances))];
   [f.breath_strength, f.breath_rate_hz] = bandShare(powerSpectrum(busiest), n, SAMPLE_HZ, 0.2, 1.5, 0.2);
+
+  // Cage camera: where he is, his outline, and how much he moves.
+  // A wide, low outline is a dog lying down; a tall one is sitting or standing.
+  const seen = packets.map((p) => p.cam).filter(Boolean);
+  if (seen.length) {
+    f.cam_x = mean(seen.map((c) => c.x));
+    f.cam_y = mean(seen.map((c) => c.y));
+    f.cam_aspect = mean(seen.map((c) => c.w / Math.max(c.h, 1e-3)));
+    f.cam_area = mean(seen.map((c) => c.area));
+    f.cam_motion_mean = mean(seen.map((c) => c.motion));
+    f.cam_motion_std = std(seen.map((c) => c.motion));
+    f.cam_travel = seen.slice(1).reduce((sum, c, i) => sum + Math.hypot(c.x - seen[i].x, c.y - seen[i].y), 0);
+  } else {
+    for (const name of ['cam_x', 'cam_y', 'cam_aspect', 'cam_area', 'cam_motion_mean',
+      'cam_motion_std', 'cam_travel']) f[name] = MISSING;
+  }
 
   const known = (value) => (value === null || value === undefined ? MISSING : value);
   f.hour = known(context.hour);
@@ -226,4 +241,42 @@ export class MoodPredictor {
       sure: proba[best] >= this.model.confidence_threshold,
     };
   }
+}
+
+// ---------------------------------------------------------------- Recording
+
+// Same columns, in the same order, as ml/ble_data_logger.py writes
+export const CSV_COLUMNS = [
+  'host_time', 'session_id', 'mood', 'sample',
+  'accel_x', 'accel_y', 'accel_z', 'gyro_x', 'gyro_y', 'gyro_z',
+  'audio_rms', 'dom_freq_hz', 'zcr', 'flags',
+  ...Array.from({ length: NUM_BANDS }, (_, i) => `band_${i}`),
+  'battery_v',
+  'cam_x', 'cam_y', 'cam_w', 'cam_h', 'cam_area', 'cam_motion',
+  'heart_rate', 'rr_ms',
+  'hour', 'mins_since_fed', 'mins_since_potty', 'owner_away',
+];
+
+/** Local time as 2026-10-01T14:02:10.123, the format Python's isoformat writes. */
+export function hostTime(date) {
+  const pad = (value, width = 2) => String(value).padStart(width, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T` +
+    `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}.${pad(date.getMilliseconds(), 3)}`;
+}
+
+/** The two CSV lines (one per motion sample) for one labelled packet. */
+export function csvRows(packet, context, sessionId, mood, date) {
+  const blank = (value) => (value === null || value === undefined ? '' : value);
+  const cam = packet.cam || {};
+  const shared = [
+    packet.rms, packet.domHz, packet.zcr, packet.flags, ...packet.bands,
+    packet.battery ? packet.battery.toFixed(2) : '',
+    blank(cam.x), blank(cam.y), blank(cam.w), blank(cam.h), blank(cam.area), blank(cam.motion),
+    '', '',
+    blank(context.hour), blank(context.minsSinceFed), blank(context.minsSincePotty),
+    context.ownerAway ? 1 : 0,
+  ];
+  return packet.motion.map((sample, i) => [
+    hostTime(date), sessionId, mood, packet.seq * 2 + i, ...sample, ...shared,
+  ].join(','));
 }

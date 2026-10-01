@@ -4,6 +4,8 @@
 import {
   DEVICE_NAME, MoodPredictor, NUM_BANDS, PACKET_SIZE, SENSOR_CHAR_UUID, SERVICE_UUID, decodePacket,
 } from './core.js';
+import { cameraOn, currentCam } from './cage.js';
+import { record, setMoods, setRecordable } from './record.js';
 
 const DOG = 'Tiny';
 const REPEAT_MS = 60_000;      // say the same mood again only after this long
@@ -61,9 +63,11 @@ function onPacket(packet) {
   received++;
   latest = packet;
 
-  const result = predictor ? predictor.add(packet, currentContext()) : null;
+  const now = currentContext();
+  packet.cam = demoTimer ? null : currentCam();
+  if (!demoTimer) record(packet, now);
+  const result = predictor ? predictor.add(packet, now) : null;
   if (result) showMood(result);
-
 }
 
 // ---------------------------------------------------------------- Mood
@@ -142,6 +146,9 @@ function refresh() {
     $('loudness').value = Math.log10(latest.rms + 1);
   }
   showContext();
+  if (model?.uses_camera && !demoTimer && device && !cameraOn()) {
+    showNotice('This model was trained with the camera. Start the camera, or its guesses will be worse.');
+  }
 
   const listening = device?.gatt?.connected || demoTimer;
   if (listening && !lost && Date.now() - lastPacketAt > LOST_MS) {
@@ -167,6 +174,7 @@ function endSession() {
   wakeLock?.release().catch(() => {});
   wakeLock = null;
   latest = null;
+  setRecordable(false);
   setStatus('Not connected');
   quietBubble(`Connect ${DOG}'s collar to hear from him.`);
   $('connect').textContent = 'Connect collar';
@@ -214,6 +222,7 @@ async function connect() {
     setStatus('Connecting…');
     await subscribe();
     startSession('Connected');
+    setRecordable(true);
     $('connect').textContent = 'Disconnect';
   } catch (error) {
     device = null;
@@ -347,9 +356,11 @@ setInterval(refresh, 1000);
 fetch('model.json').then((response) => response.json()).then((loaded) => {
   model = loaded;
   predictor = new MoodPredictor(model);
+  setMoods(Object.keys(model.phrases));
   $('model-info').textContent = model.synthetic
     ? `Starter (simulated data), ${model.classes.length} moods`
-    : `${model.classes.length} moods, ${Math.round(model.held_out_accuracy * 100)}% on held-out sessions`;
+    : `${model.classes.length} moods, ${Math.round(model.held_out_accuracy * 100)}% on held-out sessions` +
+      (model.uses_camera ? '; trained with the camera' : '');
   if (model.synthetic && !demoTimer) showNotice(STARTER_NOTICE);
 }).catch(() => {
   $('model-info').textContent = 'Could not load';

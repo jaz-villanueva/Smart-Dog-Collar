@@ -29,6 +29,7 @@ from features import (HOP, MISSING, SAMPLE_HZ, WINDOW, WINDOW_SECONDS,
 
 DATA_FILE = DATA_DIR / "sensor_readings.csv"
 RECORDINGS_DIR = DATA_DIR / "recordings"
+PHONE_DIR = DATA_DIR / "phone"
 OUTPUT_DIR = ML_DIR / "trained_models"
 
 MAX_GAP_SAMPLES = 10  # a longer run of dropped samples splits the recording
@@ -50,10 +51,12 @@ class MoodModelTrainer:
         """Load sensor data from CSV"""
         print("[DATA] Loading sensor readings...")
 
-        # Live-labelled data, plus every recording labelled from video
+        # Live-labelled data, every recording labelled from video, and
+        # recordings saved from the TinyTalk app on the phone
         files = [self.data_file] if self.data_file.exists() else []
         if self.include_recordings:
             files += sorted(RECORDINGS_DIR.glob("*/labelled.csv"))
+            files += sorted(PHONE_DIR.glob("*.csv"))
         if not files:
             print(f"[ERROR] Data file not found: {self.data_file}")
             print("[ERROR] Run data logger first: python ble_data_logger.py")

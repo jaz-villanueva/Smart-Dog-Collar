@@ -1,7 +1,7 @@
 // Keeps TinyTalk working without a connection. Fresh files win when online;
 // the saved copy is used when offline.
-const CACHE = 'tinytalk-v2';
-const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'core.js', 'model.json',
+const CACHE = 'tinytalk-v3';
+const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'core.js', 'camera.js', 'cage.js', 'record.js', 'model.json',
   'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
 
 self.addEventListener('install', (event) => {

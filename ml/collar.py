@@ -22,8 +22,10 @@ HR_STALE_SECONDS = 5
 
 # Packet layout (must match SensorPacket in the firmware)
 NUM_BANDS = 12
-PACKET_FORMAT = f"<H12hHBBB{NUM_BANDS}B"
-PACKET_SIZE = struct.calcsize(PACKET_FORMAT)  # 43 bytes
+BEACONS = ["bowl", "door", "bed"]  # order of BEACON_NAMES in the firmware
+BEACON_UNSEEN = -128
+PACKET_FORMAT = f"<H12hHBBB{NUM_BANDS}B{len(BEACONS)}bB"
+PACKET_SIZE = struct.calcsize(PACKET_FORMAT)  # 47 bytes
 BIN_HZ = 16000 / 512
 SAMPLES_PER_PACKET = 2
 SAMPLE_WRAP = 65536 * SAMPLES_PER_PACKET
@@ -44,12 +46,14 @@ EVENTS = {
 }
 
 BAND_COLUMNS = [f"band_{i}" for i in range(NUM_BANDS)]
+BEACON_COLUMNS = [f"rssi_{name}" for name in BEACONS]
 SENSOR_COLUMNS = [
     "sample",
     "accel_x", "accel_y", "accel_z",
     "gyro_x", "gyro_y", "gyro_z",
     "audio_rms", "dom_freq_hz", "zcr", "flags",
     *BAND_COLUMNS,
+    *BEACON_COLUMNS, "battery_v",
     "heart_rate", "rr_ms",
     "hour", "mins_since_fed", "mins_since_potty", "owner_away",
 ]
@@ -58,10 +62,12 @@ SENSOR_COLUMNS = [
 def decode_packet(data):
     """Turn one notification into two 50 Hz rows of sensor values in real units.
 
-    Both rows carry the same sound frame, because sound is measured once per packet.
+    Both rows carry the same sound frame, beacon strengths and battery voltage,
+    because those are measured once per packet.
     """
     fields = struct.unpack(PACKET_FORMAT, data)
-    seq, imu, (rms, dom_bin, zcr, flags), bands = fields[0], fields[1:13], fields[13:17], fields[17:]
+    seq, imu, (rms, dom_bin, zcr, flags) = fields[0], fields[1:13], fields[13:17]
+    bands, beacons, battery = fields[17:17 + NUM_BANDS], fields[17 + NUM_BANDS:-1], fields[-1]
 
     sound = {
         "audio_rms": rms,
@@ -69,6 +75,9 @@ def decode_packet(data):
         "zcr": zcr,
         "flags": flags,
         **dict(zip(BAND_COLUMNS, bands)),
+        # Blank when the collar cannot hear that beacon, or has no battery gauge
+        **{c: "" if rssi == BEACON_UNSEEN else rssi for c, rssi in zip(BEACON_COLUMNS, beacons)},
+        "battery_v": round(battery * 0.02, 2) if battery else "",
     }
     rows = []
     for i in range(SAMPLES_PER_PACKET):
@@ -141,6 +150,7 @@ class CollarStream:
         self.context = context or Context()
         self.last_seq = None
         self.dropped = 0
+        self.battery_v = ""
         self.heart_rate = None
         self.heart_rate_time = 0.0
         self.rr_queue = deque()
@@ -157,6 +167,7 @@ class CollarStream:
         if self.last_seq is not None:
             self.dropped += (seq - self.last_seq - 1) % 65536
         self.last_seq = seq
+        self.battery_v = rows[0]["battery_v"]
 
         now = time.time()
         context = self.context.values(now)

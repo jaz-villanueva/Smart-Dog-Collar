@@ -10,9 +10,11 @@ A one-month vlog project building a wearable dog mood detector using an ESP32, a
 
 ## 🎯 Project Overview
 
-- **Hardware:** ESP32 + MPU6050 (motion) + INMP441 (microphone), plus an optional heart-rate chest strap
+- **Wearable hardware:** Seeed XIAO nRF52840 Sense (motion sensor, microphone, Bluetooth and charger on one 21 × 18 mm board) with a 100–150 mAh LiPo, about 8–11 g in total. See [`hardware/WEARABLE_BUILD.md`](hardware/WEARABLE_BUILD.md).
+- **Bench hardware:** ESP32 + MPU6050 (motion) + INMP441 (microphone) on a breadboard, for development
+- **Location:** three BLE beacons at his bowl, door and bed, heard by the collar
 - **Firmware:** Arduino C++, binary BLE packets with 50 Hz motion and a 12-band sound spectrum at 25 Hz
-- **ML:** Random Forest classifier on 8-second windows of motion, sound, heart rate and context
+- **ML:** Random Forest classifier on 8-second windows of motion, sound, location, heart rate and context
 - **Live:** a laptop script that runs the model and speaks the phrase, staying quiet when it is not sure
 - **App:** Flutter mobile app *(not started)*
 - **Ground truth:** the mood you type into the data logger while watching your dog
@@ -25,7 +27,9 @@ The list and the phrases for each mood live in [`ml/moods.json`](ml/moods.json).
 
 | Part | State |
 |------|-------|
-| Firmware | Written. Not yet compiled or run on hardware. |
+| ESP32 bench firmware | Written. Not yet compiled or run on hardware. |
+| XIAO wearable firmware, beacon firmware | Written. Not yet compiled or run on hardware. |
+| Wearable hardware | Designed. Not yet built; weight and battery life are estimates. |
 | Data logger | Written. Packet decoding, heart-rate decoding and CSV output tested with synthetic packets; not yet run against a real collar or strap. |
 | Trainer | Written. Runs end to end on synthetic data; no real dog data yet. |
 | Live prediction | Written. Tested by replaying synthetic packets; not yet run against a real collar. |
@@ -38,8 +42,9 @@ The list and the phrases for each mood live in [`ml/moods.json`](ml/moods.json).
 ```
 dog-mood-collar-vlog/
 ├── firmware/
-│   └── dog_collar_firmware/
-│       └── dog_collar_firmware.ino   # ESP32 sketch
+│   ├── dog_collar_xiao/              # Wearable: XIAO nRF52840 Sense
+│   ├── dog_collar_firmware/          # Bench prototype: ESP32 + breakouts
+│   └── beacon/                       # Location beacon for any ESP32
 ├── ml/
 │   ├── moods.json                    # Mood classes + spoken phrases
 │   ├── collar.py                     # BLE connection + packet decoding (shared)
@@ -49,8 +54,9 @@ dog-mood-collar-vlog/
 │   ├── live_predict.py               # Say his mood live
 │   └── requirements.txt
 ├── hardware/
-│   ├── BOM.csv                       # Bill of materials
-│   └── WIRING_REFERENCE.txt          # Connections, power, bench checks
+│   ├── WEARABLE_BUILD.md             # The light version he wears
+│   ├── BOM.csv                       # Bench prototype bill of materials
+│   └── WIRING_REFERENCE.txt          # Bench prototype connections and checks
 ├── data/                             # Your recordings (git-ignored)
 ├── app/                              # Flutter app (to be added)
 └── docs/                             # Checklists written for the first design*
@@ -63,6 +69,8 @@ dog-mood-collar-vlog/
 ## 🚀 Quick Start
 
 ### 1. Hardware
+**To put it on the dog,** build the wearable from [`hardware/WEARABLE_BUILD.md`](hardware/WEARABLE_BUILD.md) and skip to step 2. The steps below are for the ESP32 bench prototype, which is too heavy for a small dog.
+
 1. Wire the breadboard from `hardware/WIRING_REFERENCE.txt`. **Read the power section first:** the battery goes on the TP4056 `B+`/`B-` pads, never `IN+`/`IN-`.
 2. In Arduino IDE, install ESP32 board support and the **Adafruit MPU6050** library.
 3. Flash `firmware/dog_collar_firmware/dog_collar_firmware.ino`.
@@ -95,7 +103,9 @@ python ml/live_predict.py
 ```
 Every 4 seconds it prints the mood for the last 8 seconds, averaged over the last three predictions. When the model is at least 50% confident it speaks one of the phrases through the computer; otherwise it prints "not sure". The `fed`, `went`, `away` and `home` commands work here too. Add `--mute` to print without speaking.
 
-### Optional: heart rate
+### Optional: heart rate (larger dogs only)
+A chest strap is too big and heavy for a teacup puppy; skip this section for him.
+
 A dog's heart rate and its beat-to-beat variability change with excitement and stress, which motion and sound cannot always show. An ECG chest strap that speaks the standard Bluetooth Heart Rate profile (for example a Polar H10) can be recorded alongside the collar:
 
 ```bash
@@ -173,7 +183,8 @@ An on-collar speaker is planned for later. It needs an I2S amplifier such as the
 ## ⚠️ Known Limitations
 
 - **The model learns your reading of your dog.** There is no instrument that measures a dog's mood, so "accuracy" means agreement with your labels.
-- **Hungry and potty lean on context.** They are predicted mostly from the time since you typed `fed` or `went`, so they only work while you keep logging those events. Run the trainer with `--no-context` to see how far motion and sound alone get.
+- **Hungry and potty lean on context.** They are predicted mostly from the time since you typed `fed` or `went` and from the bowl and door beacons, so they only work while you keep logging those events and the beacons stay in place. Run the trainer with `--no-context` to see how far motion and sound alone get.
+- **A model belongs to one device.** The ESP32 prototype and the XIAO wearable have different microphones and motion sensors. Record the training data on the device he will wear.
 - **Similar moods will be confused.** Expect sad/sleepy/content and anxious/stressed/alert to blur; the confusion matrix shows which.
 - **One dog.** A model trained on your dog will not transfer to another.
 - **No view of his body.** Tail, ears and posture carry much of a dog's mood and a collar cannot see them. A camera with pose estimation is the next step beyond this design.

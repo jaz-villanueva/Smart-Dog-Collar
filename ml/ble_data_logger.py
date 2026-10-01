@@ -71,7 +71,8 @@ class DogCollarLogger:
         heart = self.stream.heart_rate
         print(f"[STATUS] mood={self.current_mood or 'paused'}  "
               f"dropped packets={self.stream.dropped}  "
-              f"heart rate={heart if heart is not None else 'no strap'}")
+              f"heart rate={heart if heart is not None else 'no strap'}  "
+              f"battery={self.stream.battery_v or '?'} V")
         for mood in MOODS:
             if mood in self.counts:
                 print(f"         {mood:10s} {self.counts[mood] / SAMPLE_HZ:7.0f} s recorded this run")

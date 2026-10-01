@@ -83,7 +83,7 @@ BLE verification:
   ☐ Phone BLE scanner finds "DogMood-Collar"
   ☐ ml/ble_data_logger.py connects and "?" shows no growing dropped count
 
-  Logger prints "Expected 43 bytes, got 20" → the computer did not accept
+  Logger prints "Expected 47 bytes, got 20" → the computer did not accept
   the collar's larger BLE packet size (MTU). Try another Bluetooth adapter.
 
 ===============================================

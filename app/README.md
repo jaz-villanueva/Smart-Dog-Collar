@@ -24,6 +24,8 @@ A phone app that connects straight to the collar, watches the cage with the phon
 | **Record** | Tap a mood while you are sure of it; the collar and camera data are labelled with it. Saving downloads a CSV for the trainer. |
 | **Collar** | Connect, battery, sensor health, dropped packets, and a demo. |
 
+The phrases are recorded clips in one fixed voice, played through whatever the phone is connected to, such as a Bluetooth speaker beside the cage.
+
 It applies the same rules as `ml/live_predict.py`: 8-second windows every 4 seconds, averaged over three, spoken only at 50% confidence or more, and the same mood repeated only after a minute.
 
 ## Limits
@@ -88,5 +90,6 @@ Then open http://localhost:8000. Bluetooth and installing need either `localhost
 | `camera.js` | The dog finder; follows the steps of `ml/camera.py` |
 | `cage.js`, `record.js` | The Camera and Record tabs |
 | `model.json` | The exported Random Forest and the phrases |
+| `voice/` | A recorded clip of each phrase; see [`voice/README.md`](voice/README.md) |
 | `sw.js`, `manifest.webmanifest`, `icons/` | What makes it installable and usable offline |
 | `check_parity.mjs`, `check_camera.mjs`, `test/` | The checks |

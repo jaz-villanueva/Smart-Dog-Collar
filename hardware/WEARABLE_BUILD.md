@@ -30,12 +30,6 @@ If you want it tidier than loose wires, [`pcb/`](pcb/) has a small two-layer car
 
 For comparison, the ESP32 dev board alone is about 10 g and a 1000 mAh cell about 20 g.
 
-Around the home, optional but valuable:
-
-| Part | Notes |
-|------|-------|
-| 3 × any ESP32 board + USB charger | Location beacons for bowl, door and bed. Flash `firmware/beacon`. |
-
 ## What it measures
 
 | Signal | Source | What it tells the model |
@@ -43,7 +37,6 @@ Around the home, optional but valuable:
 | Motion, 50 Hz | Built-in LSM6DS3TR-C | Activity, play, shaking, trembling, pacing, circling, stillness |
 | Slow rocking while still | Same sensor | Resting breathing rate (experimental) |
 | Sound, 12 bands at 25 Hz | Built-in PDM microphone | Barks, whines, growls, howls, panting |
-| Beacon signal strength | Bluetooth scan | Whether he is at his bowl, the door or his bed |
 | Battery voltage | Built-in divider | When to recharge |
 | Time since meal and potty, owner away, hour | Typed into the logger | Hunger, potty need, loneliness |
 
@@ -96,12 +89,6 @@ LiPo −  ──────────────────► XIAO BAT− 
 
 If upload fails, double-tap the reset button to enter the bootloader and try again.
 
-## Beacons
-
-Flash `firmware/beacon/beacon.ino` to three ESP32 boards, changing `BEACON_NAME` each time to `DogMood-Bowl`, `DogMood-Door` and `DogMood-Bed`. Power each from a USB charger at that spot. The `[DATA]` line shows three numbers under `beacons`: closer to 0 means nearer, and -128 means not heard.
-
-The collar works without beacons; those columns are simply blank.
-
 ## Expected battery life (unmeasured)
 
-The nRF52840 with the microphone, 25 packets a second and quarter-time scanning should average under 10 mA, which would give a 150 mAh cell more than 12 hours. Measure it: the logger's `?` command shows the battery voltage. Recharge at about 3.5 V.
+The nRF52840 with the microphone and 25 packets a second should average under 10 mA, which would give a 150 mAh cell more than 12 hours. Measure it: the logger's `?` command shows the battery voltage. Recharge at about 3.5 V.

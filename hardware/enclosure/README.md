@@ -99,7 +99,6 @@ The script prints each part's size and confirms that neither half overlaps the b
 ## Not covered
 
 - **The hand-wired build without the carrier board.** It has no fixed layout to design a case around.
-- **Beacon cases.** They depend on which ESP32 board you buy.
 - **Waterproofing.** The USB opening, switch slot and microphone hole are open.
 
 The safety rules in [`../WEARABLE_BUILD.md`](../WEARABLE_BUILD.md) still apply: supervised wear only, and never charge it on the dog.

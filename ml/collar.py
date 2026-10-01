@@ -22,10 +22,8 @@ HR_STALE_SECONDS = 5
 
 # Packet layout (must match SensorPacket in the firmware)
 NUM_BANDS = 12
-BEACONS = ["bowl", "door", "bed"]  # order of BEACON_NAMES in the firmware
-BEACON_UNSEEN = -128
-PACKET_FORMAT = f"<H12hHBBB{NUM_BANDS}B{len(BEACONS)}bB"
-PACKET_SIZE = struct.calcsize(PACKET_FORMAT)  # 47 bytes
+PACKET_FORMAT = f"<H12hHBBB{NUM_BANDS}BB"
+PACKET_SIZE = struct.calcsize(PACKET_FORMAT)  # 44 bytes
 BIN_HZ = 16000 / 512
 SAMPLES_PER_PACKET = 2
 SAMPLE_WRAP = 65536 * SAMPLES_PER_PACKET
@@ -46,7 +44,6 @@ EVENTS = {
 }
 
 BAND_COLUMNS = [f"band_{i}" for i in range(NUM_BANDS)]
-BEACON_COLUMNS = [f"rssi_{name}" for name in BEACONS]
 # Where the cage camera sees him, as fractions of the picture; blank without a camera
 CAMERA_COLUMNS = ["cam_x", "cam_y", "cam_w", "cam_h", "cam_area", "cam_motion"]
 SENSOR_COLUMNS = [
@@ -55,7 +52,7 @@ SENSOR_COLUMNS = [
     "gyro_x", "gyro_y", "gyro_z",
     "audio_rms", "dom_freq_hz", "zcr", "flags",
     *BAND_COLUMNS,
-    *BEACON_COLUMNS, "battery_v",
+    "battery_v",
     *CAMERA_COLUMNS,
     "heart_rate", "rr_ms",
     "hour", "mins_since_fed", "mins_since_potty", "owner_away",
@@ -65,12 +62,12 @@ SENSOR_COLUMNS = [
 def decode_packet(data):
     """Turn one notification into two 50 Hz rows of sensor values in real units.
 
-    Both rows carry the same sound frame, beacon strengths and battery voltage,
+    Both rows carry the same sound frame and battery voltage,
     because those are measured once per packet.
     """
     fields = struct.unpack(PACKET_FORMAT, data)
     seq, imu, (rms, dom_bin, zcr, flags) = fields[0], fields[1:13], fields[13:17]
-    bands, beacons, battery = fields[17:17 + NUM_BANDS], fields[17 + NUM_BANDS:-1], fields[-1]
+    bands, battery = fields[17:17 + NUM_BANDS], fields[-1]
 
     sound = {
         "audio_rms": rms,
@@ -78,8 +75,7 @@ def decode_packet(data):
         "zcr": zcr,
         "flags": flags,
         **dict(zip(BAND_COLUMNS, bands)),
-        # Blank when the collar cannot hear that beacon, or has no battery gauge
-        **{c: "" if rssi == BEACON_UNSEEN else rssi for c, rssi in zip(BEACON_COLUMNS, beacons)},
+        # Blank when the collar has no battery gauge
         "battery_v": round(battery * 0.02, 2) if battery else "",
     }
     rows = []

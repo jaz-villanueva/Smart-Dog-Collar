@@ -8,8 +8,7 @@ training and live use always see the same numbers.
 import numpy as np
 import pandas as pd
 
-from collar import (BAND_COLUMNS, BEACON_COLUMNS, CAMERA_COLUMNS,
-                    SAMPLES_PER_PACKET)
+from collar import BAND_COLUMNS, CAMERA_COLUMNS, SAMPLES_PER_PACKET
 
 SAMPLE_HZ = 50        # motion rows per second
 FRAME_HZ = SAMPLE_HZ // SAMPLES_PER_PACKET  # sound frames per second
@@ -23,7 +22,6 @@ CONTEXT_COLUMNS = ["hour", "mins_since_fed", "mins_since_potty", "owner_away"]
 HISS_BANDS = slice(9, 12)  # above ~2.5 kHz, where panting noise sits
 MIN_BEATS_FOR_HRV = 4
 MISSING = -1.0
-BEACON_ABSENT = -110.0  # weaker than any real signal: "far from this beacon"
 CAMERA_FEATURES = ["cam_x", "cam_y", "cam_aspect", "cam_area",
                    "cam_motion_mean", "cam_motion_std", "cam_travel"]
 
@@ -137,13 +135,6 @@ def compute_window_features(window_df, use_context=True):
     else:
         for name in CAMERA_FEATURES:
             features[name] = MISSING
-
-    # Where he is: how strongly the collar hears each beacon (bowl, door, bed)
-    if use_context:
-        for column in BEACON_COLUMNS:
-            rssi = numeric(window_df, column)
-            rssi = rssi[~np.isnan(rssi)]
-            features[column] = rssi.mean() if len(rssi) else BEACON_ABSENT
 
     # Context the sensors cannot see
     if use_context:

@@ -1,6 +1,6 @@
 /*
  * Smart Dog Collar Firmware (Seeed XIAO nRF52840 Sense) - the wearable version
- * Motion + sound + location sensing, streamed over BLE
+ * Motion + sound sensing, streamed over BLE
  *
  * The XIAO nRF52840 Sense carries everything on one 21 x 18 mm board:
  * - nRF52840 (Bluetooth LE)
@@ -8,11 +8,7 @@
  * - PDM microphone
  * - LiPo charger (battery solders to the BAT+/BAT- pads underneath)
  *
- * It also listens for up to three BLE beacons placed around the home and
- * reports how strongly it hears each one, which tells the model whether the
- * dog is at his food bowl, at the door, or in his bed. See firmware/beacon.
- *
- * Every 40 ms the collar sends one 47-byte notification (little-endian),
+ * Every 40 ms the collar sends one 44-byte notification (little-endian),
  * the same packet as firmware/dog_collar_firmware:
  *
  *   offset  type       field        unit
@@ -26,8 +22,7 @@
  *   29      uint8      zcr          zero crossings in 512 samples, / 2
  *   30      uint8      flags        bit0 = IMU ok, bit1 = mic ok
  *   31      uint8 x12  bands        8 * log2(1 + mean magnitude) per band
- *   43      int8 x3    beacons      RSSI of bowl, door, bed beacons; -128 = unseen
- *   46      uint8      battery      x 0.02 V; 0 = not measured
+ *   43      uint8      battery      x 0.02 V; 0 = not measured
  *
  * ml/collar.py decodes this layout; change all three together.
  *
@@ -54,14 +49,6 @@
 // First FFT bin of each band, plus the end of the last one
 static const uint16_t BAND_EDGES[NUM_BANDS + 1] = {
   3, 5, 7, 10, 14, 20, 28, 40, 57, 81, 115, 163, 256
-};
-
-// ============== BEACONS ==============
-#define NUM_BEACONS       3
-#define BEACON_UNSEEN     (-128)
-#define BEACON_STALE_MS   10000
-static const char *BEACON_NAMES[NUM_BEACONS] = {
-  "DogMood-Bowl", "DogMood-Door", "DogMood-Bed"
 };
 
 // ============== BATTERY ==============
@@ -100,10 +87,9 @@ struct __attribute__((packed)) SensorPacket {
   uint8_t zcr;
   uint8_t flags;
   uint8_t bands[NUM_BANDS];
-  int8_t beacons[NUM_BEACONS];
   uint8_t battery;
 };
-static_assert(sizeof(SensorPacket) == 47, "packet layout must match ml/collar.py");
+static_assert(sizeof(SensorPacket) == 44, "packet layout must match ml/collar.py");
 
 LSM6DS3 imu(I2C_MODE, 0x6A);
 BLEService collarService(SERVICE_UUID);
@@ -120,9 +106,6 @@ static float audio[FRAME_SAMPLES];
 static float fftRe[FFT_SIZE];
 static float fftIm[FFT_SIZE];
 static float hannWindow[FFT_SIZE];
-
-static volatile int8_t beaconRssi[NUM_BEACONS];
-static volatile uint32_t beaconSeenMs[NUM_BEACONS];
 
 static uint8_t batteryLevel = 0;
 
@@ -247,29 +230,6 @@ void readImu(SensorPacket &p, int slot) {
   p.flags |= FLAG_IMU_OK;
 }
 
-// ============== BEACONS ==============
-void onScanReport(ble_gap_evt_adv_report_t *report) {
-  char name[32] = {0};
-  if (Bluefruit.Scanner.parseReportByType(report, BLE_GAP_AD_TYPE_COMPLETE_LOCAL_NAME,
-                                          (uint8_t *)name, sizeof(name) - 1)) {
-    for (int i = 0; i < NUM_BEACONS; i++) {
-      if (strcmp(name, BEACON_NAMES[i]) == 0) {
-        beaconRssi[i] = report->rssi;
-        beaconSeenMs[i] = millis();
-      }
-    }
-  }
-  Bluefruit.Scanner.resume();
-}
-
-void fillBeacons(SensorPacket &p) {
-  uint32_t now = millis();
-  for (int i = 0; i < NUM_BEACONS; i++) {
-    bool fresh = beaconSeenMs[i] != 0 && now - beaconSeenMs[i] < BEACON_STALE_MS;
-    p.beacons[i] = fresh ? beaconRssi[i] : BEACON_UNSEEN;
-  }
-}
-
 // ============== BATTERY ==============
 void readBattery() {
   float volts = analogRead(PIN_VBAT) * (2.4f / 4096.0f) * BATTERY_DIVIDER;
@@ -278,8 +238,8 @@ void readBattery() {
 
 // ============== BLE ==============
 void initBLE() {
-  Bluefruit.configPrphBandwidth(BANDWIDTH_MAX);  // allows the 47-byte packet
-  Bluefruit.begin(1, 1);                         // one connection out, scanning enabled
+  Bluefruit.configPrphBandwidth(BANDWIDTH_MAX);  // allows the 44-byte packet
+  Bluefruit.begin(1, 0);                         // one connection, as a peripheral
   Bluefruit.setName(DEVICE_NAME);
   Bluefruit.setTxPower(0);
 
@@ -295,20 +255,12 @@ void initBLE() {
   Bluefruit.Advertising.restartOnDisconnect(true);
   Bluefruit.Advertising.setInterval(160, 244);   // units of 0.625 ms
   Bluefruit.Advertising.start(0);
-
-  // Listen for beacons a quarter of the time to save battery
-  Bluefruit.Scanner.setRxCallback(onScanReport);
-  Bluefruit.Scanner.restartOnDisconnect(true);
-  Bluefruit.Scanner.setInterval(256, 64);        // every 160 ms, for 40 ms
-  Bluefruit.Scanner.useActiveScan(false);
-  Bluefruit.Scanner.start(0);
 }
 
 // ============== SETUP ==============
 void setup() {
   Serial.begin(115200);
 
-  for (int i = 0; i < NUM_BEACONS; i++) beaconRssi[i] = BEACON_UNSEEN;
   for (int i = 0; i < FFT_SIZE; i++) {
     hannWindow[i] = 0.5f * (1.0f - cosf(2.0f * PI * i / (FFT_SIZE - 1)));
   }
@@ -355,7 +307,6 @@ void loop() {
   slot = 0;
   packet.seq = seq++;
   if (mic_available) analyseAudio(packet);
-  fillBeacons(packet);
   packet.battery = batteryLevel;
 
   if (Bluefruit.connected()) {
@@ -363,9 +314,8 @@ void loop() {
   }
 
   if (packet.seq % 25 == 0) {
-    Serial.printf("[DATA] seq=%u rms=%u dom=%.0fHz beacons=(%d,%d,%d) batt=%.2fV flags=0x%02X\n",
+    Serial.printf("[DATA] seq=%u rms=%u dom=%.0fHz batt=%.2fV flags=0x%02X\n",
                   packet.seq, packet.audio_rms, packet.dom_bin * 31.25f,
-                  packet.beacons[0], packet.beacons[1], packet.beacons[2],
                   packet.battery * 0.02f, packet.flags);
   }
 

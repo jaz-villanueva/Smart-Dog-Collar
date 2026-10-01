@@ -1,17 +1,15 @@
-// TinyTalk core: packet decoding, window features, the mood model and the zone tracker.
+// TinyTalk core: packet decoding, window features and the mood model.
 // No DOM here, so check_parity.mjs can run it under Node against the Python scripts.
 //
-// decodePacket mirrors ml/collar.py, windowFeatures mirrors ml/features.py and
-// ZoneTracker mirrors ml/track.py. Change them together.
+// decodePacket mirrors ml/collar.py and windowFeatures mirrors ml/features.py.
+// Change them together.
 
 export const DEVICE_NAME = 'DogMood-Collar';
 export const SERVICE_UUID = '12345678-1234-5678-1234-56789abcdef0';
 export const SENSOR_CHAR_UUID = '87654321-4321-8765-4321-fedcba987654';
 
-export const PACKET_SIZE = 47;
+export const PACKET_SIZE = 44;
 export const NUM_BANDS = 12;
-export const BEACONS = ['bowl', 'door', 'bed'];
-const BEACON_UNSEEN = -128;
 const BIN_HZ = 16000 / 512;
 
 export const SAMPLE_HZ = 50;
@@ -20,11 +18,10 @@ export const WINDOW_PACKETS = 8 * FRAME_HZ;
 export const HOP_PACKETS = 4 * FRAME_HZ;
 const GRAVITY = 9.81;
 const MISSING = -1;
-const BEACON_ABSENT = -110;
 
 // ---------------------------------------------------------------- Packet
 
-/** Turn one 47-byte notification (a DataView) into sensor values in real units. */
+/** Turn one 44-byte notification (a DataView) into sensor values in real units. */
 export function decodePacket(view) {
   const motion = [];
   for (let i = 0; i < 2; i++) {
@@ -36,11 +33,7 @@ export function decodePacket(view) {
   }
   const bands = [];
   for (let i = 0; i < NUM_BANDS; i++) bands.push(view.getUint8(31 + i));
-  const rssi = BEACONS.map((_, i) => {
-    const value = view.getInt8(43 + i);
-    return value === BEACON_UNSEEN ? null : value;
-  });
-  const battery = view.getUint8(46);
+  const battery = view.getUint8(43);
   return {
     seq: view.getUint16(0, true),
     motion,
@@ -49,7 +42,6 @@ export function decodePacket(view) {
     zcr: view.getUint8(29),
     flags: view.getUint8(30),
     bands,
-    rssi,
     battery: battery ? battery * 0.02 : null,
   };
 }
@@ -172,11 +164,6 @@ export function windowFeatures(packets, context) {
   const busiest = axes[variances.indexOf(max(variances))];
   [f.breath_strength, f.breath_rate_hz] = bandShare(powerSpectrum(busiest), n, SAMPLE_HZ, 0.2, 1.5, 0.2);
 
-  BEACONS.forEach((name, i) => {
-    const heard = packets.map((p) => p.rssi[i]).filter((v) => v !== null);
-    f[`rssi_${name}`] = heard.length ? mean(heard) : BEACON_ABSENT;
-  });
-
   const known = (value) => (value === null || value === undefined ? MISSING : value);
   f.hour = known(context.hour);
   f.mins_since_fed = known(context.minsSinceFed);
@@ -238,60 +225,5 @@ export class MoodPredictor {
       confidence: proba[best],
       sure: proba[best] >= this.model.confidence_threshold,
     };
-  }
-}
-
-// ---------------------------------------------------------------- Where is he
-
-export const ELSEWHERE = 'elsewhere';
-
-/** Which beacon is he at? Mirrors ml/track.py. */
-export class ZoneTracker {
-  constructor(nearDbm = -70, marginDb = 6, smoothSeconds = 3) {
-    this.nearDbm = nearDbm;
-    this.marginDb = marginDb;
-    this.keep = smoothSeconds * FRAME_HZ;
-    this.reset();
-  }
-
-  reset() {
-    this.recent = BEACONS.map(() => []);
-    this.zone = null;
-    this.count = 0;
-  }
-
-  /** Median strength of each beacon heard at least half the time; null otherwise. */
-  strengths() {
-    return this.recent.map((values) => {
-      const heard = values.filter((v) => v !== null).sort((a, b) => a - b);
-      if (!values.length || heard.length * 2 < values.length) return null;
-      const mid = heard.length >> 1;
-      return heard.length % 2 ? heard[mid] : (heard[mid - 1] + heard[mid]) / 2;
-    });
-  }
-
-  /** Add one packet. Returns the new zone when it changes, else null. */
-  add(packet) {
-    packet.rssi.forEach((value, i) => {
-      this.recent[i].push(value);
-      if (this.recent[i].length > this.keep) this.recent[i].shift();
-    });
-    if (++this.count % FRAME_HZ) return null;   // decide once a second
-
-    const strengths = this.strengths();
-    const at = (name) => strengths[BEACONS.indexOf(name)];
-    let best = null;
-    BEACONS.forEach((name) => {
-      if (at(name) !== null && (best === null || at(name) > at(best))) best = name;
-    });
-    let zone = this.zone;
-    if (zone === null || zone === ELSEWHERE || at(zone) === null || at(zone) < this.nearDbm) zone = ELSEWHERE;
-    if (best !== null && at(best) >= this.nearDbm && best !== zone) {
-      // Stay put unless the new beacon is clearly stronger, or he was nowhere
-      if (zone === ELSEWHERE || at(best) >= at(zone) + this.marginDb) zone = best;
-    }
-    if (zone === this.zone) return null;
-    this.zone = zone;
-    return zone;
   }
 }

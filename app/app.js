@@ -2,8 +2,7 @@
 // the phone, and says the phrase. The arithmetic lives in core.js.
 
 import {
-  BEACONS, DEVICE_NAME, ELSEWHERE, MoodPredictor, NUM_BANDS, PACKET_SIZE,
-  SENSOR_CHAR_UUID, SERVICE_UUID, ZoneTracker, decodePacket,
+  DEVICE_NAME, MoodPredictor, NUM_BANDS, PACKET_SIZE, SENSOR_CHAR_UUID, SERVICE_UUID, decodePacket,
 } from './core.js';
 
 const DOG = 'Tiny';
@@ -11,7 +10,6 @@ const REPEAT_MS = 60_000;      // say the same mood again only after this long
 const LOST_MS = 5_000;         // no packets for this long means out of range
 const RETRY_MS = 5_000;
 const HISTORY_LENGTH = 8;
-const PLACES = { bowl: 'At his bowl', door: 'At the door', bed: 'In his bed', [ELSEWHERE]: 'Not near a beacon' };
 
 const $ = (id) => document.getElementById(id);
 
@@ -25,14 +23,11 @@ function save(key, value) {
 }
 
 const context = load('context', { lastFed: null, lastPotty: null, ownerAway: false });
-const today = () => new Date().toDateString();
-let visits = load('visits', { day: today(), seconds: {} });
 
 // ---------------------------------------------------------------- Session
 
 let model = null;
 let predictor = null;
-const tracker = new ZoneTracker();
 let device = null;
 let demoTimer = null;
 let wakeLock = null;
@@ -69,11 +64,6 @@ function onPacket(packet) {
   const result = predictor ? predictor.add(packet, currentContext()) : null;
   if (result) showMood(result);
 
-  if (tracker.add(packet) !== null) showZone();
-  if (tracker.zone && !demoTimer) {   // the demo is not part of his day
-    if (visits.day !== today()) visits = { day: today(), seconds: {} };
-    visits.seconds[tracker.zone] = (visits.seconds[tracker.zone] || 0) + 0.04;
-  }
 }
 
 // ---------------------------------------------------------------- Mood
@@ -119,50 +109,6 @@ function quietBubble(text, detail = '') {
   $('mood-detail').textContent = detail;
 }
 
-// ---------------------------------------------------------------- Where
-
-function meterRow(label, share, value, here = false) {
-  const row = document.createElement('div');
-  row.className = here ? 'meter here' : 'meter';
-  const track = document.createElement('div');
-  track.className = 'track';
-  const fill = document.createElement('div');
-  fill.className = 'fill';
-  fill.style.width = `${Math.round(Math.max(0, Math.min(1, share)) * 100)}%`;
-  track.append(fill);
-  const name = document.createElement('span');
-  name.textContent = label;
-  const number = document.createElement('span');
-  number.className = 'value';
-  number.textContent = value;
-  row.append(name, track, number);
-  return row;
-}
-
-function showZone() {
-  $('zone').textContent = tracker.zone ? PLACES[tracker.zone] : 'Listening…';
-}
-
-function showWhere() {
-  const strengths = tracker.strengths();
-  $('beacons').replaceChildren(...BEACONS.map((name, i) => {
-    const dbm = strengths[i];
-    // -90 dBm is barely heard, -45 dBm is right beside it
-    return meterRow(name[0].toUpperCase() + name.slice(1), dbm === null ? 0 : (dbm + 90) / 45,
-      dbm === null ? 'not heard' : `${Math.round(dbm)} dBm`, tracker.zone === name);
-  }));
-
-  const total = Object.values(visits.seconds).reduce((a, b) => a + b, 0);
-  const rows = [...BEACONS, ELSEWHERE].map((name) => {
-    const seconds = visits.seconds[name] || 0;
-    const minutes = Math.round(seconds / 60);
-    const label = name === ELSEWHERE ? 'Elsewhere' : name[0].toUpperCase() + name.slice(1);
-    return meterRow(label, total ? seconds / total : 0, minutes >= 60
-      ? `${Math.floor(minutes / 60)} h ${minutes % 60} m` : `${minutes} min`);
-  });
-  $('today').replaceChildren(...rows);
-}
-
 // ---------------------------------------------------------------- Status
 
 function setStatus(text, kind = '') {
@@ -195,9 +141,7 @@ function refresh() {
     $('movement').value = Math.abs(Math.hypot(ax, ay, az) - 9.81);
     $('loudness').value = Math.log10(latest.rms + 1);
   }
-  showWhere();
   showContext();
-  save('visits', visits);
 
   const listening = device?.gatt?.connected || demoTimer;
   if (listening && !lost && Date.now() - lastPacketAt > LOST_MS) {
@@ -210,14 +154,12 @@ function refresh() {
 
 function startSession(label) {
   predictor?.reset();
-  tracker.reset();
   lastSeq = null;
   lost = false;
   lastPacketAt = Date.now();
   spoken = { mood: null, at: 0 };
   setStatus(label, 'on');
   quietBubble(`Listening to ${DOG}…`, 'The first reading takes about 8 seconds.');
-  showZone();
   navigator.wakeLock?.request('screen').then((lock) => { wakeLock = lock; }).catch(() => {});
 }
 
@@ -227,7 +169,6 @@ function endSession() {
   latest = null;
   setStatus('Not connected');
   quietBubble(`Connect ${DOG}'s collar to hear from him.`);
-  $('zone').textContent = 'Not connected';
   $('connect').textContent = 'Connect collar';
   $('demo').textContent = 'Try a demo';
 }
@@ -286,10 +227,10 @@ async function connect() {
 // few made-up scenes; nothing here is a reading of a real dog.
 
 const SCENES = [
-  { move: 6, stride: 4, turn: 150, vocal: 0.15, burst: 5, pitch: 700, near: null, fed: 120, potty: 60, away: false },   // playing
-  { move: 0.05, stride: 0.5, turn: 1, vocal: 0, burst: 1, pitch: 0, near: 2, fed: 120, potty: 60, away: false },         // asleep in bed
-  { move: 0.2, stride: 0.8, turn: 10, vocal: 0.25, burst: 4, pitch: 800, near: 1, fed: 150, potty: 90, away: false },    // barking at the door
-  { move: 1, stride: 1.5, turn: 30, vocal: 0.1, burst: 15, pitch: 1200, near: 0, fed: 400, potty: 100, away: false },    // waiting at the bowl
+  { move: 6, stride: 4, turn: 150, vocal: 0.15, burst: 5, pitch: 700, fed: 120, potty: 60, away: false },   // playing
+  { move: 0.05, stride: 0.5, turn: 1, vocal: 0, burst: 1, pitch: 0, fed: 120, potty: 60, away: false },         // asleep
+  { move: 0.2, stride: 0.8, turn: 10, vocal: 0.25, burst: 4, pitch: 800, fed: 150, potty: 90, away: false },    // barking at a sound
+  { move: 1, stride: 1.5, turn: 30, vocal: 0.1, burst: 15, pitch: 1200, fed: 400, potty: 100, away: false },    // pacing, long after his meal
 ];
 const SCENE_SECONDS = 30;
 const BAND_TOP_HZ = [156, 219, 312, 437, 625, 875, 1250, 1781, 2531, 3594, 5094, 8000];
@@ -337,7 +278,6 @@ function demoPacket() {
     zcr: Math.min(255, Math.round(pitch * 0.032)),
     flags: 3,
     bands,
-    rssi: BEACONS.map((_, i) => Math.round((i === scene.near ? -53 : -80) + noise(4))),
     battery: 3.9,
   };
   demoSeq++;
@@ -402,7 +342,6 @@ document.querySelectorAll('[data-event]').forEach((button) => {
 
 quietBubble(`Connect ${DOG}'s collar to hear from him.`);
 showContext();
-showWhere();
 setInterval(refresh, 1000);
 
 fetch('model.json').then((response) => response.json()).then((loaded) => {

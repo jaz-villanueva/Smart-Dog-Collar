@@ -93,3 +93,6 @@ feature_importance.png
 
 # Logger state
 data/context_state.json
+
+# Recordings (video of your home)
+data/recordings/

@@ -13,6 +13,7 @@ A one-month vlog project building a wearable dog mood detector using an ESP32, a
 - **Wearable hardware:** Seeed XIAO nRF52840 Sense (motion sensor, microphone, Bluetooth and charger on one 21 × 18 mm board) with a 100–150 mAh LiPo, about 8–11 g in total. See [`hardware/WEARABLE_BUILD.md`](hardware/WEARABLE_BUILD.md).
 - **Bench hardware:** ESP32 + MPU6050 (motion) + INMP441 (microphone) on a breadboard, for development
 - **Location:** three BLE beacons at his bowl, door and bed, heard by the collar
+- **Cage camera (optional):** tracks his position, outline and movement in the cage, and lets you label recordings from video afterwards. See [`docs/CAMERA.md`](docs/CAMERA.md).
 - **Firmware:** Arduino C++, binary BLE packets with 50 Hz motion and a 12-band sound spectrum at 25 Hz
 - **ML:** Random Forest classifier on 8-second windows of motion, sound, location, heart rate and context
 - **Live:** a laptop script that runs the model and speaks the phrase, staying quiet when it is not sure
@@ -39,6 +40,8 @@ Shopping list: [`docs/PH_SHOPPING_LIST.md`](docs/PH_SHOPPING_LIST.md).
 | Data logger | Written. Packet decoding, heart-rate decoding and CSV output tested with synthetic packets; not yet run against a real collar or strap. |
 | Trainer | Written. Runs end to end on synthetic data; no real dog data yet. |
 | Live prediction | Written. Tested by replaying synthetic packets; not yet run against a real collar. |
+| Cage camera, unattended recording, video labelling | Written. Tested on a synthetic video; not yet run on a real camera or dog. |
+| Tail, ear and posture tracking (pose model) | Not started. |
 | Mobile app, collar housing, on-collar speaker, sample dataset | Not started. |
 
 ---
@@ -58,6 +61,8 @@ dog-mood-collar-vlog/
 │   ├── ble_data_logger.py            # Record sensor data + label moods
 │   ├── train_mood_model.py           # Train and test the classifier
 │   ├── live_predict.py               # Say his mood live
+│   ├── camera.py                     # Cage camera tracker
+│   ├── label_video.py                # Label a recording from its video
 │   └── requirements.txt
 ├── hardware/
 │   ├── WEARABLE_BUILD.md             # The light version he wears
@@ -67,6 +72,7 @@ dog-mood-collar-vlog/
 ├── app/                              # Flutter app (to be added)
 └── docs/
     ├── PH_SHOPPING_LIST.md           # What to buy, and what not to
+    ├── CAMERA.md                     # Cage camera setup and labelling from video
     ├── images/                       # Drawings
     └── ...                           # Older checklists*
 ```
@@ -99,6 +105,15 @@ Type a mood (a unique prefix is enough, e.g. `hu` for hungry) to start labelling
 | `fed` | he just ate |
 | `went` | he just peed or pooped |
 | `away` / `home` | you are leaving him alone / you are back |
+
+**Or record now and label later.** With a camera on his cage, the logger can record everything while you are away, and you label the video afterwards. See [`docs/CAMERA.md`](docs/CAMERA.md).
+
+```bash
+python ml/ble_data_logger.py --camera 0 --unattended
+```
+```bash
+python ml/label_video.py
+```
 
 ### 3. Training
 ```bash
@@ -149,7 +164,7 @@ Your labels are the ground truth, so the model can only be as good as they are.
 | Stressed | Overwhelmed: too many people, loud noise, being handled |
 
 - **Record every mood on several separate occasions**, at least 5 and ideally 10+, each a minute or more. The trainer tests on occasions it never trained on and skips any mood with fewer than 2.
-- **Lonely needs you to be gone.** Start the label, type `away`, and leave the laptop in BLE range (or watch him on a camera).
+- **Lonely needs you to be gone.** Record unattended with the cage camera and label the video afterwards, or start the label, type `away`, and leave the laptop in BLE range.
 
 ---
 
@@ -196,7 +211,7 @@ An on-collar speaker is planned for later. It needs an I2S amplifier such as the
 - **A model belongs to one device.** The ESP32 prototype and the XIAO wearable have different microphones and motion sensors. Record the training data on the device he will wear.
 - **Similar moods will be confused.** Expect sad/sleepy/content and anxious/stressed/alert to blur; the confusion matrix shows which.
 - **One dog.** A model trained on your dog will not transfer to another.
-- **No view of his body.** Tail, ears and posture carry much of a dog's mood and a collar cannot see them. A camera with pose estimation is the next step beyond this design.
+- **No view of his tail or ears.** They carry much of a dog's mood. The cage camera sees only his outline, position and movement; tracking body parts needs an animal pose model, which is the next step beyond this design.
 - **The laptop must stay in BLE range** (about 10 m) for both recording and live prediction.
 - The housing is 3D-printed and not waterproof. Do not leave the collar on an unsupervised dog, and never charge it while he is wearing it.
 

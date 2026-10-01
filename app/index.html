@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>TinyTalk</title>
+  <meta name="description" content="Hear what Tiny's collar thinks he is feeling.">
+  <meta name="theme-color" content="#f6f1e9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#17150f" media="(prefers-color-scheme: dark)">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>TinyTalk</h1>
+    <button id="status" class="pill" type="button">Not connected</button>
+  </header>
+
+  <p id="notice" class="notice" hidden></p>
+
+  <main>
+    <section id="tab-talk" class="tab">
+      <div class="bubble" id="bubble">
+        <p class="phrase" id="phrase">Connect Tiny's collar to hear from him.</p>
+        <p class="detail" id="mood-detail"></p>
+      </div>
+
+      <h2>Tell TinyTalk</h2>
+      <div class="events">
+        <button type="button" data-event="fed">He just ate<small id="since-fed"></small></button>
+        <button type="button" data-event="went">He just went potty<small id="since-potty"></small></button>
+        <button type="button" data-event="away" id="away-button" aria-pressed="false">I'm leaving</button>
+      </div>
+      <label class="switch"><input type="checkbox" id="speak" checked> Say the phrases out loud</label>
+
+      <h2>Earlier</h2>
+      <ul class="history" id="history"><li class="empty">Nothing yet.</li></ul>
+    </section>
+
+    <section id="tab-where" class="tab" hidden>
+      <div class="bubble">
+        <p class="phrase" id="zone">Not connected</p>
+        <p class="detail">Nearest beacon, from Bluetooth signal strength. Indoors only; this is not GPS.</p>
+      </div>
+      <h2>Signal from each beacon</h2>
+      <div class="meters" id="beacons"></div>
+      <h2>Today</h2>
+      <div class="meters" id="today"></div>
+    </section>
+
+    <section id="tab-collar" class="tab" hidden>
+      <div class="actions">
+        <button type="button" class="primary" id="connect">Connect collar</button>
+        <button type="button" id="demo">Try a demo</button>
+      </div>
+      <dl class="facts">
+        <div><dt>Battery</dt><dd id="battery">–</dd></div>
+        <div><dt>Motion sensor</dt><dd id="imu">–</dd></div>
+        <div><dt>Microphone</dt><dd id="mic">–</dd></div>
+        <div><dt>Packets received</dt><dd id="packets">0</dd></div>
+        <div><dt>Packets dropped</dt><dd id="dropped">0</dd></div>
+        <div><dt>Movement</dt><dd><meter id="movement" min="0" max="6" value="0"></meter></dd></div>
+        <div><dt>Loudness</dt><dd><meter id="loudness" min="0" max="4" value="0"></meter></dd></div>
+        <div><dt>Mood model</dt><dd id="model-info">Loading…</dd></div>
+      </dl>
+      <p class="hint">Connecting needs Chrome or Edge on Android, Windows, macOS or Linux. iPhone and iPad browsers cannot use Bluetooth, so only the demo works there. Keep this screen open: the phone stops listening when the app is in the background.</p>
+    </section>
+  </main>
+
+  <nav>
+    <button type="button" data-tab="talk" aria-current="page">Talk</button>
+    <button type="button" data-tab="where">Where</button>
+    <button type="button" data-tab="collar">Collar</button>
+  </nav>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

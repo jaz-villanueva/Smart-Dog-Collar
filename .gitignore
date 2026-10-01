@@ -105,3 +105,6 @@ data/recordings/
 # Synthetic starter model is tracked
 !ml/starter_model/
 !ml/starter_model/*.joblib
+
+# App icons are tracked
+!app/icons/*.png

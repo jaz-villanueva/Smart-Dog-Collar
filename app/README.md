@@ -6,8 +6,8 @@ A phone app that connects straight to the collar, runs the mood model on the pho
 
 | Check | Result |
 |-------|--------|
-| Features and mood probabilities match the Python scripts | Yes: `node app/check_parity.mjs`, 4 windows, largest probability error 2 × 10⁻⁸ |
-| Demo mode in a browser: phrases, beacon zones, offline cache | Works |
+| Features and mood probabilities match the Python scripts | Yes: `node app/check_parity.mjs`, 4 windows, largest probability error 1 × 10⁻⁸ |
+| Demo mode in a browser: phrases, offline cache | Works |
 | Bluetooth connection to a real collar | **Not tested** |
 | Installed on a phone | **Not tested** |
 
@@ -16,7 +16,6 @@ A phone app that connects straight to the collar, runs the mood model on the pho
 | Tab | Shows |
 |-----|-------|
 | **Talk** | The phrase for his mood, spoken aloud if you allow it. Buttons for "he just ate", "he just went potty" and "I'm leaving", which the model uses for hungry, potty and lonely. |
-| **Where** | Which beacon he is nearest (bowl, door, bed), each beacon's signal, and where he spent today. Indoors only; not GPS. |
 | **Collar** | Connect, battery, sensor health, dropped packets, and a demo. |
 
 It applies the same rules as `ml/live_predict.py`: 8-second windows every 4 seconds, averaged over three, spoken only at 50% confidence or more, and the same mood repeated only after a minute.
@@ -26,6 +25,7 @@ It applies the same rules as `ml/live_predict.py`: 8-second windows every 4 seco
 - **The model inside is the synthetic starter.** Its phrases are not real readings of your dog until you record your own data, train, and export (below). The app says so on screen.
 - **Bluetooth needs Chrome or Edge** on Android, Windows, macOS or Linux. iPhone and iPad browsers do not support Web Bluetooth, so only the demo runs there.
 - **Keep the screen on and the app in front.** Browsers stop Bluetooth for a page in the background.
+- **No cage camera.** The app uses the collar only. A model trained with the camera will guess worse here; `export_app_model.py` warns you.
 - **It does not record or label.** Use `ml/ble_data_logger.py` on a laptop for that.
 - The demo plays made-up scenes from a simulated collar.
 
@@ -52,7 +52,7 @@ Then open http://localhost:8000. Bluetooth and installing need either `localhost
 | File | What it is |
 |------|------------|
 | `index.html`, `styles.css`, `app.js` | The page and its behaviour |
-| `core.js` | Packet decoding, features, the forest and the zone tracker; mirrors `ml/collar.py`, `ml/features.py` and `ml/track.py` |
+| `core.js` | Packet decoding, features and the forest; mirrors `ml/collar.py` and `ml/features.py` |
 | `model.json` | The exported Random Forest and the phrases |
 | `sw.js`, `manifest.webmanifest`, `icons/` | What makes it installable and usable offline |
 | `check_parity.mjs`, `test/` | The check against Python |

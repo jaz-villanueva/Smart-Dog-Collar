@@ -116,13 +116,6 @@ button.primary, button[aria-pressed="true"] { background: var(--accent); border-
 .history li { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); }
 .history time, .history .empty { color: var(--muted); font-size: 0.85rem; }
 
-.meters { display: grid; gap: 10px; }
-.meter { display: grid; grid-template-columns: 5.5em 1fr 5em; align-items: center; gap: 10px; font-size: 0.9rem; }
-.meter .track { height: 10px; border-radius: 999px; background: var(--line); overflow: hidden; }
-.meter .fill { height: 100%; width: 0; border-radius: 999px; background: var(--accent); transition: width 0.4s; }
-.meter .value { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
-.meter.here { font-weight: 700; }
-
 .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .facts { margin: 20px 0 0; }
 .facts div { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--line); }
@@ -135,7 +128,7 @@ nav {
   position: sticky;
   bottom: 0;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   background: var(--card);
   border-top: 1px solid var(--line);
   padding-bottom: env(safe-area-inset-bottom);

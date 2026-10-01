@@ -10,7 +10,7 @@
  * - MPU6050 (IMU)        -> I2C (SDA=21, SCL=22)
  * - INMP441 (microphone) -> I2S (SD=32, WS=25, SCK=33, L/R=GND)
  *
- * Every 40 ms the collar sends one 47-byte notification (little-endian).
+ * Every 40 ms the collar sends one 44-byte notification (little-endian).
  * It carries two motion samples (50 Hz) and one sound frame (25 Hz):
  *
  *   offset  type       field        unit
@@ -24,16 +24,15 @@
  *   29      uint8      zcr          zero crossings in 512 samples, / 2
  *   30      uint8      flags        bit0 = IMU ok, bit1 = mic ok
  *   31      uint8 x12  bands        8 * log2(1 + mean magnitude) per band
- *   43      int8 x3    beacons      RSSI of bowl, door, bed beacons; -128 = unseen
- *   46      uint8      battery      x 0.02 V; 0 = not measured
+ *   43      uint8      battery      x 0.02 V; 0 = not measured
  *
  * Band edges in Hz: 94, 156, 219, 312, 437, 625, 875, 1250, 1781, 2531,
  * 3594, 5094, 8000.
  *
- * This prototype does not scan for beacons or measure its battery, so it
- * always sends -128 and 0 for those fields.
+ * This prototype does not measure its battery, so it always sends 0 for
+ * that field.
  *
- * 47 bytes needs a BLE MTU of at least 50. The collar offers 185; the
+ * 44 bytes needs a BLE MTU of at least 47. The collar offers 185; the
  * computer or phone must accept it (Windows, macOS, Linux and Android do).
  * ml/collar.py decodes this layout; change all three together.
  *
@@ -65,8 +64,6 @@
 #define HALF_MS         (500 / PACKET_RATE_HZ)
 #define FFT_SIZE        512                               // 31.25 Hz per bin
 #define NUM_BANDS       12
-#define NUM_BEACONS     3
-#define BEACON_UNSEEN   (-128)
 
 // First FFT bin of each band, plus the end of the last one
 static const uint16_t BAND_EDGES[NUM_BANDS + 1] = {
@@ -95,10 +92,9 @@ struct __attribute__((packed)) SensorPacket {
   uint8_t zcr;
   uint8_t flags;
   uint8_t bands[NUM_BANDS];
-  int8_t beacons[NUM_BEACONS];
   uint8_t battery;
 };
-static_assert(sizeof(SensorPacket) == 47, "packet layout must match ml/collar.py");
+static_assert(sizeof(SensorPacket) == 44, "packet layout must match ml/collar.py");
 
 Adafruit_MPU6050 mpu;
 bool mpu_available = false;
@@ -342,7 +338,6 @@ void loop() {
 
   SensorPacket packet = {};
   packet.seq = seq++;
-  for (int i = 0; i < NUM_BEACONS; i++) packet.beacons[i] = BEACON_UNSEEN;
 
   bool gotAudio = true;
   for (int half = 0; half < 2; half++) {

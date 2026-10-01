@@ -60,9 +60,6 @@
     "cam_motion_mean",
     "cam_motion_std",
     "cam_travel",
-    "rssi_bowl",
-    "rssi_door",
-    "rssi_bed",
     "hour",
     "mins_since_fed",
     "mins_since_potty",
@@ -72,7 +69,7 @@
   "uses_heart_rate": false,
   "uses_camera": false,
   "confidence_threshold": 0.5,
-  "held_out_accuracy": 0.9926,
-  "confident_accuracy": 0.9962,
-  "confident_share": 0.9759
+  "held_out_accuracy": 0.987,
+  "confident_accuracy": 0.9888,
+  "confident_share": 0.9907
 }

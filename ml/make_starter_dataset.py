@@ -3,8 +3,8 @@
 Make the SYNTHETIC starter dataset.
 
 No dog was involved. Each mood is simulated from a hand-written guess at what
-the collar would report (how much he moves, what he sounds like, which beacon
-he is near, how long since he ate). It exists so the trainer and the live
+the collar would report (how much he moves, what he sounds like, how long
+since he ate). It exists so the trainer and the live
 script can be run end to end before any real recording, and to show the CSV
 layout that ble_data_logger.py writes.
 
@@ -30,28 +30,28 @@ BAND_TOP_HZ = np.array([156, 219, 312, 437, 625, 875, 1250, 1781, 2531, 3594, 50
 # tremble   fast shaking, m/s^2         turn      rotation, deg/s
 # vocal     share of time vocalising    burst     length of one sound, s
 # pitch     of the sound, Hz            pant      strength of panting hiss, 0-1
-# near      beacon he is beside         fed/potty minutes since, (low, high)
+# fed/potty minutes since, (low, high)  away      1 while the owner is out
 PROFILES = {
     "playful":  dict(move=6.0, stride=4.0, tremble=0.0, turn=150, vocal=0.15, burst=0.2,
-                     pitch=700, pant=0.3, near=None, fed=(60, 200), potty=(20, 120), away=0),
+                     pitch=700, pant=0.3, fed=(60, 200), potty=(20, 120), away=0),
     "sleepy":   dict(move=0.05, stride=0.5, tremble=0.0, turn=1, vocal=0.0, burst=0.2,
-                     pitch=0, pant=0.0, near="bed", fed=(30, 240), potty=(20, 180), away=0),
+                     pitch=0, pant=0.0, fed=(30, 240), potty=(20, 180), away=0),
     "hungry":   dict(move=1.0, stride=1.5, tremble=0.0, turn=30, vocal=0.10, burst=0.6,
-                     pitch=1200, pant=0.0, near="bowl", fed=(300, 480), potty=(20, 180), away=0),
+                     pitch=1200, pant=0.0, fed=(300, 480), potty=(20, 180), away=0),
     "potty":    dict(move=1.5, stride=1.8, tremble=0.0, turn=80, vocal=0.06, burst=0.5,
-                     pitch=1300, pant=0.0, near="door", fed=(60, 240), potty=(240, 400), away=0),
+                     pitch=1300, pant=0.0, fed=(60, 240), potty=(240, 400), away=0),
     "sad":      dict(move=0.15, stride=0.6, tremble=0.0, turn=3, vocal=0.0, burst=0.2,
-                     pitch=0, pant=0.0, near=None, fed=(60, 300), potty=(20, 200), away=0),
+                     pitch=0, pant=0.0, fed=(60, 300), potty=(20, 200), away=0),
     "lonely":   dict(move=0.6, stride=1.2, tremble=0.0, turn=15, vocal=0.35, burst=1.5,
-                     pitch=600, pant=0.0, near="door", fed=(60, 300), potty=(20, 200), away=1),
+                     pitch=600, pant=0.0, fed=(60, 300), potty=(20, 200), away=1),
     "anxious":  dict(move=2.0, stride=2.0, tremble=0.5, turn=60, vocal=0.05, burst=0.4,
-                     pitch=1400, pant=0.8, near=None, fed=(60, 300), potty=(20, 200), away=0),
+                     pitch=1400, pant=0.8, fed=(60, 300), potty=(20, 200), away=0),
     "alert":    dict(move=0.2, stride=0.8, tremble=0.0, turn=10, vocal=0.25, burst=0.15,
-                     pitch=800, pant=0.0, near="door", fed=(60, 300), potty=(20, 200), away=0),
+                     pitch=800, pant=0.0, fed=(60, 300), potty=(20, 200), away=0),
     "content":  dict(move=0.3, stride=0.8, tremble=0.0, turn=5, vocal=0.0, burst=0.2,
-                     pitch=0, pant=0.1, near="bed", fed=(20, 120), potty=(20, 120), away=0),
+                     pitch=0, pant=0.1, fed=(20, 120), potty=(20, 120), away=0),
     "stressed": dict(move=3.0, stride=2.5, tremble=1.0, turn=90, vocal=0.12, burst=0.25,
-                     pitch=2000, pant=1.0, near=None, fed=(60, 300), potty=(20, 200), away=0),
+                     pitch=2000, pant=1.0, fed=(60, 300), potty=(20, 200), away=0),
 }
 assert set(PROFILES) == set(MOODS), "one profile per mood in moods.json"
 
@@ -95,12 +95,6 @@ def make_session(mood, index, rng):
         column = np.clip(voice_band + offset, 0, len(BAND_COLUMNS) - 1)
         bands[np.flatnonzero(vocal), column[vocal]] += gain
 
-    # Where he is: strong signal from the beacon he is beside, weak from the others
-    rssi = {}
-    for name in ("bowl", "door", "bed"):
-        centre = rng.uniform(-58, -48) if name == p["near"] else rng.uniform(-88, -72)
-        rssi[name] = np.round(centre + rng.normal(scale=4, size=frames))
-
     session = pd.DataFrame({
         "host_time": pd.Timestamp("2026-01-01") + pd.to_timedelta(index * 3600 + t, unit="s"),
         "session_id": f"synthetic-{mood}-{index}",
@@ -114,7 +108,6 @@ def make_session(mood, index, rng):
         "flags": 3,
         **{c: np.repeat(np.clip(np.round(bands[:, i]), 0, 255), 2).astype(int)
            for i, c in enumerate(BAND_COLUMNS)},
-        **{f"rssi_{name}": np.repeat(values, 2).astype(int) for name, values in rssi.items()},
         "battery_v": 3.9,
         **dict.fromkeys(CAMERA_COLUMNS, ""),
         "heart_rate": "", "rr_ms": "",

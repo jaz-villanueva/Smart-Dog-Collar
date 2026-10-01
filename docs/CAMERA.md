@@ -1,6 +1,6 @@
 # Cage Camera
 
-A fixed camera on his cage adds two things the wearable cannot give:
+A fixed camera on his cage is how the system knows where he is. It adds two things the wearable cannot give:
 
 1. **What he looks like from outside:** where he is in the cage, whether his outline is long and low (lying) or tall (sitting, standing), and how much he is moving.
 2. **A way to label afterwards.** The logger records everything with video while you are away, and you label the video later. This is the only honest way to collect "lonely" data, and it is easier than typing labels live.

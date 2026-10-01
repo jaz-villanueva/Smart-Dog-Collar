@@ -21,7 +21,7 @@ import joblib
 import numpy as np
 import pandas as pd
 
-from collar import BAND_COLUMNS, BEACON_COLUMNS, ML_DIR, PHRASES
+from collar import BAND_COLUMNS, ML_DIR, PHRASES
 from features import WINDOW, compute_window_features
 
 APP_DIR = ML_DIR.parent / "app"
@@ -67,7 +67,6 @@ def export_sample(model, metadata, data_file):
                 "domHz": float(first["dom_freq_hz"]),
                 "zcr": float(first["zcr"]),
                 "bands": [float(first[c]) for c in BAND_COLUMNS],
-                "rssi": [blank_to_none(first[c]) for c in BEACON_COLUMNS],
             })
         last = window.iloc[-1]
         windows.append({

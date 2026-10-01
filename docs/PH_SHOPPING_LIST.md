@@ -28,18 +28,9 @@ Prices were looked up on 2026-10-01 where a source is given. Everything marked *
 
 Buy a second battery and switch. They are cheap, and the solder pads are small enough that a spare is worth having.
 
-## 2. Location beacons (recommended)
+## 2. Cage camera (recommended)
 
-They tell the model whether he is at his bowl, the door or his bed, which is the best evidence for hungry, potty and sleepy.
-
-| Item | What to look for | Qty | Price | Where |
-|------|------------------|-----|-------|-------|
-| Any ESP32 board | The ESP32-WROOM you already own works as one. "ESP32-C3 Super Mini" boards are the cheapest. | 3 (buy 2) | ₱150–300 each (*estimate*) | Shopee: "ESP32 C3 super mini" |
-| USB phone charger + cable | One per beacon | 3 | probably owned | — |
-
-## 3. Cage camera (optional)
-
-It adds his position, outline and movement in the cage, and lets you label recordings from video. Setup is in [`CAMERA.md`](CAMERA.md).
+It is the only thing that tells the model where he is. It adds his position, outline and movement in the cage, and lets you label recordings from video. Setup is in [`CAMERA.md`](CAMERA.md).
 
 | Item | What to look for | Qty | Price | Where |
 |------|------------------|-----|-------|-------|
@@ -47,7 +38,7 @@ It adds his position, outline and movement in the cage, and lets you label recor
 | Mount or clamp | Must hold the camera rigidly above the cage | 1 | ₱100–300 (*estimate*) | Shopee: "webcam clamp mount" |
 | Bedding in a colour unlike his coat | The tracker needs contrast to see him | 1 | probably owned | — |
 
-## 4. Bench prototype (optional)
+## 3. Bench prototype (optional)
 
 Only if you want to develop on the ESP32 before the XIAO arrives. This build is too heavy for him to wear. The full list with quantities is in [`hardware/BOM.csv`](../hardware/BOM.csv).
 
@@ -73,9 +64,8 @@ These open a **search**, not a single listing. Individual listings change seller
 | TPU filament 1.75 mm | [Shopee](https://shopee.ph/search?keyword=TPU%20filament%201.75mm) | [Lazada](https://www.lazada.com.ph/catalog/?q=TPU+filament+1.75mm) | Or PETG |
 | Puppy harness, XXS | [Shopee](https://shopee.ph/search?keyword=puppy%20harness%20XXS%20mesh) | [Lazada](https://www.lazada.com.ph/catalog/?q=puppy+harness+XXS+mesh) | Better fitted on him in a pet shop |
 | Sew-on Velcro, 20 mm | [Shopee](https://shopee.ph/search?keyword=sew%20on%20velcro%2020mm) | [Lazada](https://www.lazada.com.ph/catalog/?q=sew+on+velcro+20mm) |  |
-| ESP32-C3 Super Mini (beacons) | [Shopee](https://shopee.ph/search?keyword=ESP32%20C3%20super%20mini) | [Lazada](https://www.lazada.com.ph/catalog/?q=ESP32+C3+super+mini) | Buy 2–3 |
-| USB webcam 1080p (cage camera) | [Shopee](https://shopee.ph/search?keyword=USB%20webcam%201080p) | [Lazada](https://www.lazada.com.ph/catalog/?q=USB+webcam+1080p) | Optional |
-| IP camera with RTSP (cage camera) | [Shopee](https://shopee.ph/search?keyword=IP%20camera%20RTSP) | [Lazada](https://www.lazada.com.ph/catalog/?q=IP+camera+RTSP) | Optional; check the listing says RTSP |
+| USB webcam 1080p (cage camera) | [Shopee](https://shopee.ph/search?keyword=USB%20webcam%201080p) | [Lazada](https://www.lazada.com.ph/catalog/?q=USB+webcam+1080p) | Recommended |
+| IP camera with RTSP (cage camera) | [Shopee](https://shopee.ph/search?keyword=IP%20camera%20RTSP) | [Lazada](https://www.lazada.com.ph/catalog/?q=IP+camera+RTSP) | In place of the webcam; check the listing says RTSP |
 | MPU6050 module (bench only) | [Shopee](https://shopee.ph/search?keyword=MPU6050%20module) | [Lazada](https://www.lazada.com.ph/catalog/?q=MPU6050+module) | Optional |
 | INMP441 microphone (bench only) | [Shopee](https://shopee.ph/search?keyword=INMP441%20I2S%20microphone) | [Lazada](https://www.lazada.com.ph/catalog/?q=INMP441+I2S+microphone) | Optional |
 | TP4056 with protection (bench only) | [Shopee](https://shopee.ph/search?keyword=TP4056%20type-c%20protection) | [Lazada](https://www.lazada.com.ph/catalog/?q=TP4056+type-c+protection) | Optional; 6-pad version |
@@ -95,6 +85,7 @@ Earlier versions of this project listed these. They do not work for a small dog,
 | VL53L0X distance sensor | Adds no mood information |
 | PAM8403 amplifier and speaker | Extra weight and loud sound at his head; the laptop speaks instead |
 | 1000 mAh battery for the wearable | About 20 g, heavier than the whole wearable |
+| ESP32 boards as location beacons | An earlier version placed three around the home. Dropped: the cage camera does the job without surrounding him with electronics. |
 | A custom board with its own radio chip | Not lighter than the XIAO, and far riskier. The optional carrier board in [`hardware/pcb/`](../hardware/pcb/) is the sensible version. |
 
 ## Tools

@@ -17,7 +17,7 @@
 python ml/train_mood_model.py --data data/starter/synthetic_starter.csv.gz --out ml/starter_model
 ```
 
-It scores 99.3% on held-out synthetic sessions. That figure only shows the simulated moods were made easy to tell apart. **It is not an estimate of accuracy on a real dog**, and the model's guesses on a real collar are meaningless.
+It scores 98.7% on held-out synthetic sessions. That figure only shows the simulated moods were made easy to tell apart. **It is not an estimate of accuracy on a real dog**, and the model's guesses on a real collar are meaningless.
 
 To watch the live script run with it:
 

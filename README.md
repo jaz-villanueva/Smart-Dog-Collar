@@ -12,8 +12,7 @@ A one-month vlog project building a wearable dog mood detector using an ESP32, a
 
 - **Wearable hardware:** Seeed XIAO nRF52840 Sense (motion sensor, microphone, Bluetooth and charger on one 21 × 18 mm board) with a 100–150 mAh LiPo, about 8–11 g in total. See [`hardware/WEARABLE_BUILD.md`](hardware/WEARABLE_BUILD.md).
 - **Bench hardware:** ESP32 + MPU6050 (motion) + INMP441 (microphone) on a breadboard, for development
-- **Location:** three BLE beacons at his bowl, door and bed, heard by the collar
-- **Cage camera (optional):** tracks his position, outline and movement in the cage, and lets you label recordings from video afterwards. See [`docs/CAMERA.md`](docs/CAMERA.md).
+- **Cage camera (recommended):** the only source of where he is. It tracks his position, outline and movement in the cage, and lets you label recordings from video afterwards. See [`docs/CAMERA.md`](docs/CAMERA.md).
 - **Firmware:** Arduino C++, binary BLE packets with 50 Hz motion and a 12-band sound spectrum at 25 Hz
 - **ML:** Random Forest classifier on 8-second windows of motion, sound, location, heart rate and context
 - **Live:** a laptop script that runs the model and speaks the phrase, staying quiet when it is not sure
@@ -58,7 +57,7 @@ These are renders of the 3D model, not photos:
 | Part | State |
 |------|-------|
 | ESP32 bench firmware | Written. Not yet compiled or run on hardware. |
-| XIAO wearable firmware, beacon firmware | Written. Not yet compiled or run on hardware. |
+| XIAO wearable firmware | Written. Not yet compiled or run on hardware. |
 | Wearable hardware | Designed. Not yet built; weight and battery life are estimates. |
 | Carrier PCB (optional) | Designed; passes KiCad's design rule check. Not yet fabricated. See [`hardware/pcb/`](hardware/pcb/). |
 | Data logger | Written. Packet decoding, heart-rate decoding and CSV output tested with synthetic packets; not yet run against a real collar or strap. |
@@ -66,7 +65,6 @@ These are renders of the 3D model, not photos:
 | Live prediction | Written. Tested by replaying synthetic packets; not yet run against a real collar. |
 | Cage camera, unattended recording, video labelling | Written. Tested on a synthetic video; not yet run on a real camera or dog. |
 | Tail, ear and posture tracking (pose model) | Not started. |
-| Indoor tracking (`ml/track.py`) | Written. Tested with simulated beacon signals; not yet run against a real collar. No GPS. See [`docs/TRACKING.md`](docs/TRACKING.md). |
 | Housing for the carrier-board build | Modelled; not yet printed. See [`hardware/enclosure/`](hardware/enclosure/). |
 | Starter dataset and model | **Synthetic**, for running the scripts only; says nothing about a real dog. See [`data/starter/`](data/starter/). |
 | TinyTalk web app | First version. Demo mode and the model arithmetic tested; not yet connected to a real collar. See [`app/`](app/). |
@@ -80,8 +78,7 @@ These are renders of the 3D model, not photos:
 dog-mood-collar-vlog/
 ├── firmware/
 │   ├── dog_collar_xiao/              # Wearable: XIAO nRF52840 Sense
-│   ├── dog_collar_firmware/          # Bench prototype: ESP32 + breakouts
-│   └── beacon/                       # Location beacon for any ESP32
+│   └── dog_collar_firmware/          # Bench prototype: ESP32 + breakouts
 ├── ml/
 │   ├── moods.json                    # Mood classes + spoken phrases
 │   ├── collar.py                     # BLE connection + packet decoding (shared)
@@ -90,7 +87,6 @@ dog-mood-collar-vlog/
 │   ├── train_mood_model.py           # Train and test the classifier
 │   ├── live_predict.py               # Say his mood live
 │   ├── export_app_model.py           # Export a trained model for the web app
-│   ├── track.py                      # Which beacon he is at, a log, and an out-of-range alarm
 │   ├── make_starter_dataset.py       # Writes the synthetic starter data
 │   ├── starter_model/                # Model trained on the synthetic data
 │   ├── camera.py                     # Cage camera tracker
@@ -109,7 +105,6 @@ dog-mood-collar-vlog/
     ├── PH_SHOPPING_LIST.md           # What to buy, and what not to
     ├── MOODS.md                      # Sensor, signal, features and phrase for each mood
     ├── CAMERA.md                     # Cage camera setup and labelling from video
-    ├── TRACKING.md                   # Indoor tracking, and what it cannot do
     ├── images/                       # Drawings
     └── ...                           # Older checklists*
 ```
@@ -163,12 +158,6 @@ The model and its confusion matrix go to `ml/trained_models/`.
 python ml/live_predict.py
 ```
 Every 4 seconds it prints the mood for the last 8 seconds, averaged over the last three predictions. When the model is at least 50% confident it speaks one of the phrases through the computer; otherwise it prints "not sure". The `fed`, `went`, `away` and `home` commands work here too. Add `--mute` to print without speaking.
-
-### 5. Where is he?
-```bash
-python ml/track.py
-```
-With the three beacons in place, it prints which one he is nearest (bowl, door or bed), logs his visits to `data/track_log.csv`, and raises an alarm when the collar goes out of Bluetooth range. This is tracking inside the home only; there is no GPS. See [`docs/TRACKING.md`](docs/TRACKING.md).
 
 ### Optional: heart rate (larger dogs only)
 A chest strap is too big and heavy for a teacup puppy; skip this section for him.
@@ -250,7 +239,7 @@ An on-collar speaker is planned for later. It needs an I2S amplifier such as the
 ## ⚠️ Known Limitations
 
 - **The model learns your reading of your dog.** There is no instrument that measures a dog's mood, so "accuracy" means agreement with your labels.
-- **Hungry and potty lean on context.** They are predicted mostly from the time since you typed `fed` or `went` and from the bowl and door beacons, so they only work while you keep logging those events and the beacons stay in place. Run the trainer with `--no-context` to see how far motion and sound alone get.
+- **Hungry and potty lean on context.** They are predicted mostly from the time since you typed `fed` or `went`, helped by where the cage camera sees him, so they only work while you keep logging those events. Run the trainer with `--no-context` to see how far motion and sound alone get.
 - **A model belongs to one device.** The ESP32 prototype and the XIAO wearable have different microphones and motion sensors. Record the training data on the device he will wear.
 - **Similar moods will be confused.** Expect sad/sleepy/content and anxious/stressed/alert to blur; the confusion matrix shows which.
 - **One dog.** A model trained on your dog will not transfer to another.

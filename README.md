@@ -37,6 +37,7 @@ Shopping list: [`docs/PH_SHOPPING_LIST.md`](docs/PH_SHOPPING_LIST.md).
 | ESP32 bench firmware | Written. Not yet compiled or run on hardware. |
 | XIAO wearable firmware, beacon firmware | Written. Not yet compiled or run on hardware. |
 | Wearable hardware | Designed. Not yet built; weight and battery life are estimates. |
+| Carrier PCB (optional) | Designed; passes KiCad's design rule check. Not yet fabricated. See [`hardware/pcb/`](hardware/pcb/). |
 | Data logger | Written. Packet decoding, heart-rate decoding and CSV output tested with synthetic packets; not yet run against a real collar or strap. |
 | Trainer | Written. Runs end to end on synthetic data; no real dog data yet. |
 | Live prediction | Written. Tested by replaying synthetic packets; not yet run against a real collar. |
@@ -66,6 +67,7 @@ dog-mood-collar-vlog/
 │   └── requirements.txt
 ├── hardware/
 │   ├── WEARABLE_BUILD.md             # The light version he wears
+│   ├── pcb/                          # Optional carrier board (KiCad, Gerbers, renders)
 │   ├── BOM.csv                       # Bench prototype bill of materials
 │   └── WIRING_REFERENCE.txt          # Bench prototype connections and checks
 ├── data/                             # Your recordings (git-ignored)

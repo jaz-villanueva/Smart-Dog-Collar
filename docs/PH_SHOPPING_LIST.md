@@ -20,6 +20,8 @@ Prices were looked up on 2026-10-01 where a source is given. Everything marked *
 | 8 | Sew-on Velcro, 16–20 mm wide | To fix the housing to the harness | 1 | ₱50–100 (*estimate*) | Shopee / craft shop |
 | 9 | USB-C data cable | For flashing and charging; many cables are charge-only | 1 | probably owned | — |
 
+**Optional carrier board:** if you build the version in [`hardware/pcb/`](../hardware/pcb/), also order the boards (two layers, 0.8 mm; price depends on the maker and shipping, not checked) and buy an **SS12D00G3** slide switch in place of item 3.
+
 **Wearable total:** about ₱2,200–3,300 (*estimate*), most of it the XIAO.
 
 > **Careful with local listings.** Makerlab lists a "Seeed Studio XIAO nRF52840" at ₱1,500 [2]. That is the plain board, with **no motion sensor and no microphone**, and it showed as out of stock on 2026-10-01. It will not work for this project.
@@ -69,7 +71,7 @@ Earlier versions of this project listed these. They do not work for a small dog,
 | VL53L0X distance sensor | Adds no mood information |
 | PAM8403 amplifier and speaker | Extra weight and loud sound at his head; the laptop speaks instead |
 | 1000 mAh battery for the wearable | About 20 g, heavier than the whole wearable |
-| Custom JLCPCB board | Not lighter than the XIAO; see [`hardware/WEARABLE_BUILD.md`](../hardware/WEARABLE_BUILD.md) |
+| A custom board with its own radio chip | Not lighter than the XIAO, and far riskier. The optional carrier board in [`hardware/pcb/`](../hardware/pcb/) is the sensible version. |
 
 ## Tools
 

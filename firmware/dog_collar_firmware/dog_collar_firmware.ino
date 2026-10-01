@@ -1,25 +1,32 @@
 /*
  * Smart Dog Collar Firmware (ESP32)
- * Motion + sound sensing, streamed over BLE at 25 Hz
+ * Motion + sound sensing, streamed over BLE
  *
  * Hardware:
  * - ESP32-WROOM-32
  * - MPU6050 (IMU)        -> I2C (SDA=21, SCL=22)
  * - INMP441 (microphone) -> I2S (SD=32, WS=25, SCK=33, L/R=GND)
  *
- * Every 40 ms the collar sends one 20-byte notification (little-endian):
+ * Every 40 ms the collar sends one 43-byte notification (little-endian).
+ * It carries two motion samples (50 Hz) and one sound frame (25 Hz):
  *
- *   offset  type    field        unit
- *   0       uint16  seq          packet counter, wraps at 65535
- *   2       int16   ax, ay, az   0.01 m/s^2
- *   8       int16   gx, gy, gz   0.1 deg/s
- *   14      uint16  audio_rms    loudness of the last 40 ms (0-65535)
- *   16      uint8   dom_bin      loudest frequency, x 31.25 Hz
- *   17      uint8   centroid_bin spectral centroid, x 31.25 Hz
- *   18      uint8   zcr          zero crossings in 512 samples, / 2
- *   19      uint8   flags        bit0 = IMU ok, bit1 = mic ok
+ *   offset  type       field        unit
+ *   0       uint16     seq          packet counter, wraps at 65535
+ *   2       int16 x3   accel A      0.01 m/s^2, first half of the frame
+ *   8       int16 x3   gyro A       0.1 deg/s
+ *   14      int16 x3   accel B      second half of the frame
+ *   20      int16 x3   gyro B
+ *   26      uint16     audio_rms    loudness of the frame (0-65535)
+ *   28      uint8      dom_bin      loudest frequency, x 31.25 Hz
+ *   29      uint8      zcr          zero crossings in 512 samples, / 2
+ *   30      uint8      flags        bit0 = IMU ok, bit1 = mic ok
+ *   31      uint8 x12  bands        8 * log2(1 + mean magnitude) per band
  *
- * 20 bytes fits the default BLE MTU, so no MTU negotiation is needed.
+ * Band edges in Hz: 94, 156, 219, 312, 437, 625, 875, 1250, 1781, 2531,
+ * 3594, 5094, 8000.
+ *
+ * 43 bytes needs a BLE MTU of at least 46. The collar offers 185; the
+ * computer or phone must accept it (Windows, macOS, Linux and Android do).
  * ml/ble_data_logger.py decodes this layout; change both together.
  *
  * Libraries: Adafruit MPU6050 (pulls in Adafruit Unified Sensor + BusIO).
@@ -46,29 +53,40 @@
 #define AUDIO_RATE_HZ   16000
 #define PACKET_RATE_HZ  25
 #define FRAME_SAMPLES   (AUDIO_RATE_HZ / PACKET_RATE_HZ)  // 640 samples = 40 ms
+#define HALF_SAMPLES    (FRAME_SAMPLES / 2)               // one IMU sample per half
+#define HALF_MS         (500 / PACKET_RATE_HZ)
 #define FFT_SIZE        512                               // 31.25 Hz per bin
-#define FFT_MIN_BIN     3                                 // ignore < ~100 Hz (handling noise)
-#define FRAME_MS        (1000 / PACKET_RATE_HZ)
+#define NUM_BANDS       12
+
+// First FFT bin of each band, plus the end of the last one
+static const uint16_t BAND_EDGES[NUM_BANDS + 1] = {
+  3, 5, 7, 10, 14, 20, 28, 40, 57, 81, 115, 163, 256
+};
 
 // ============== BLE ==============
 #define DEVICE_NAME       "DogMood-Collar"
 #define SERVICE_UUID      "12345678-1234-5678-1234-56789abcdef0"
 #define SENSOR_CHAR_UUID  "87654321-4321-8765-4321-fedcba987654"
+#define BLE_MTU           185
 
 #define FLAG_IMU_OK 0x01
 #define FLAG_MIC_OK 0x02
 
-struct __attribute__((packed)) SensorPacket {
-  uint16_t seq;
+struct __attribute__((packed)) ImuSample {
   int16_t ax, ay, az;
   int16_t gx, gy, gz;
+};
+
+struct __attribute__((packed)) SensorPacket {
+  uint16_t seq;
+  ImuSample imu[2];
   uint16_t audio_rms;
   uint8_t dom_bin;
-  uint8_t centroid_bin;
   uint8_t zcr;
   uint8_t flags;
+  uint8_t bands[NUM_BANDS];
 };
-static_assert(sizeof(SensorPacket) == 20, "packet must fit the default BLE MTU");
+static_assert(sizeof(SensorPacket) == 43, "packet layout must match ble_data_logger.py");
 
 Adafruit_MPU6050 mpu;
 bool mpu_available = false;
@@ -152,7 +170,7 @@ bool initMicrophone() {
   cfg.communication_format = I2S_COMM_FORMAT_STAND_I2S;
   cfg.intr_alloc_flags = 0;
   cfg.dma_buf_count = 4;
-  cfg.dma_buf_len = FRAME_SAMPLES / 2;
+  cfg.dma_buf_len = HALF_SAMPLES;
   cfg.use_apll = false;
 
   i2s_pin_config_t pins = {};
@@ -176,8 +194,8 @@ void initSensors() {
     mpu_available = true;
     mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
     mpu.setGyroRange(MPU6050_RANGE_500_DEG);
-    // 10 Hz low-pass keeps motion above the 12.5 Hz Nyquist limit from aliasing
-    mpu.setFilterBandwidth(MPU6050_BAND_10_HZ);
+    // 21 Hz low-pass keeps motion above the 25 Hz Nyquist limit from aliasing
+    mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
     Serial.println("[MPU6050] OK (8G accel, 500 deg/s gyro)");
   } else {
     Serial.println("[MPU6050] FAILED - check wiring and address 0x68");
@@ -194,28 +212,33 @@ void initSensors() {
 }
 
 // ============== SENSOR READING ==============
-void readImu(SensorPacket &p) {
+void readImu(SensorPacket &p, int slot) {
   if (!mpu_available) return;
 
   sensors_event_t a, g, temp;
   mpu.getEvent(&a, &g, &temp);
-  p.ax = toInt16(a.acceleration.x * 100.0f);
-  p.ay = toInt16(a.acceleration.y * 100.0f);
-  p.az = toInt16(a.acceleration.z * 100.0f);
-  p.gx = toInt16(g.gyro.x * RAD_TO_DEG * 10.0f);  // library reports rad/s
-  p.gy = toInt16(g.gyro.y * RAD_TO_DEG * 10.0f);
-  p.gz = toInt16(g.gyro.z * RAD_TO_DEG * 10.0f);
+  ImuSample &s = p.imu[slot];
+  s.ax = toInt16(a.acceleration.x * 100.0f);
+  s.ay = toInt16(a.acceleration.y * 100.0f);
+  s.az = toInt16(a.acceleration.z * 100.0f);
+  s.gx = toInt16(g.gyro.x * RAD_TO_DEG * 10.0f);  // library reports rad/s
+  s.gy = toInt16(g.gyro.y * RAD_TO_DEG * 10.0f);
+  s.gz = toInt16(g.gyro.z * RAD_TO_DEG * 10.0f);
   p.flags |= FLAG_IMU_OK;
 }
 
-// Blocks until 40 ms of audio has arrived, which paces the main loop at 25 Hz.
+// Blocks until 20 ms of audio has arrived, which paces the main loop.
 // Returns false if the microphone produced no data.
-bool readAudio(SensorPacket &p) {
+bool readAudioHalf(int half) {
+  size_t wanted = HALF_SAMPLES * sizeof(int32_t);
   size_t bytesRead = 0;
-  esp_err_t err = i2s_read(I2S_NUM_0, rawAudio, sizeof(rawAudio), &bytesRead, pdMS_TO_TICKS(200));
-  if (err != ESP_OK || bytesRead != sizeof(rawAudio)) return false;
+  esp_err_t err = i2s_read(I2S_NUM_0, rawAudio + half * HALF_SAMPLES, wanted,
+                           &bytesRead, pdMS_TO_TICKS(200));
+  return err == ESP_OK && bytesRead == wanted;
+}
 
-  // 24-bit sample sits in the top of the 32-bit slot; >> 14 leaves ~16-bit headroom
+void analyseAudio(SensorPacket &p) {
+  // 24-bit sample sits in the top of the 32-bit slot; >> 14 leaves 18 bits
   float mean = 0.0f;
   for (int i = 0; i < FRAME_SAMPLES; i++) {
     audio[i] = (float)(rawAudio[i] >> 14);
@@ -243,18 +266,20 @@ bool readAudio(SensorPacket &p) {
   }
   fft(fftRe, fftIm, FFT_SIZE);
 
-  float peak = 0.0f, magSum = 0.0f, weighted = 0.0f;
+  float peak = 0.0f;
   int peakBin = 0;
-  for (int bin = FFT_MIN_BIN; bin < FFT_SIZE / 2; bin++) {
-    float mag = sqrtf(fftRe[bin] * fftRe[bin] + fftIm[bin] * fftIm[bin]);
-    magSum += mag;
-    weighted += mag * bin;
-    if (mag > peak) { peak = mag; peakBin = bin; }
+  for (int band = 0; band < NUM_BANDS; band++) {
+    float sum = 0.0f;
+    for (int bin = BAND_EDGES[band]; bin < BAND_EDGES[band + 1]; bin++) {
+      float mag = sqrtf(fftRe[bin] * fftRe[bin] + fftIm[bin] * fftIm[bin]);
+      sum += mag;
+      if (mag > peak) { peak = mag; peakBin = bin; }
+    }
+    float meanMag = sum / (BAND_EDGES[band + 1] - BAND_EDGES[band]);
+    p.bands[band] = toUint8(8.0f * log2f(1.0f + meanMag));
   }
   p.dom_bin = (uint8_t)peakBin;
-  p.centroid_bin = magSum > 0.0f ? toUint8(weighted / magSum) : 0;
   p.flags |= FLAG_MIC_OK;
-  return true;
 }
 
 // ============== BLE INIT ==============
@@ -262,6 +287,7 @@ void initBLE() {
   Serial.println("[BLE] Initializing BLE...");
 
   BLEDevice::init(DEVICE_NAME);
+  BLEDevice::setMTU(BLE_MTU);
   pServer = BLEDevice::createServer();
   pServer->setCallbacks(new MyServerCallbacks());
 
@@ -301,13 +327,24 @@ void setup() {
 // ============== MAIN LOOP ==============
 void loop() {
   static uint16_t seq = 0;
-  unsigned long frameStart = millis();
 
   SensorPacket packet = {};
   packet.seq = seq++;
 
-  bool gotAudio = mic_available && readAudio(packet);
-  readImu(packet);
+  bool gotAudio = true;
+  for (int half = 0; half < 2; half++) {
+    unsigned long halfStart = millis();
+    bool ok = mic_available && readAudioHalf(half);
+    gotAudio = gotAudio && ok;
+    readImu(packet, half);
+
+    // Without audio there is no blocking read, so pace the loop by the clock
+    if (!ok) {
+      unsigned long elapsed = millis() - halfStart;
+      if (elapsed < HALF_MS) delay(HALF_MS - elapsed);
+    }
+  }
+  if (gotAudio) analyseAudio(packet);
 
   if (deviceConnected) {
     pSensorChar->setValue((uint8_t *)&packet, sizeof(packet));
@@ -322,16 +359,11 @@ void loop() {
 
   // Once a second, print a line for bench debugging
   if (packet.seq % PACKET_RATE_HZ == 0) {
+    const ImuSample &s = packet.imu[1];
     Serial.printf("[DATA] seq=%u a=(%.2f,%.2f,%.2f) m/s2 g=(%.1f,%.1f,%.1f) deg/s rms=%u dom=%.0fHz flags=0x%02X\n",
                   packet.seq,
-                  packet.ax / 100.0f, packet.ay / 100.0f, packet.az / 100.0f,
-                  packet.gx / 10.0f, packet.gy / 10.0f, packet.gz / 10.0f,
+                  s.ax / 100.0f, s.ay / 100.0f, s.az / 100.0f,
+                  s.gx / 10.0f, s.gy / 10.0f, s.gz / 10.0f,
                   packet.audio_rms, packet.dom_bin * 31.25f, packet.flags);
-  }
-
-  // Without audio there is no blocking read, so pace the loop by the clock
-  if (!gotAudio) {
-    unsigned long elapsed = millis() - frameStart;
-    if (elapsed < FRAME_MS) delay(FRAME_MS - elapsed);
   }
 }

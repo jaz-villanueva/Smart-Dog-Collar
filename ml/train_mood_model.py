@@ -23,92 +23,16 @@ from sklearn.metrics import (ConfusionMatrixDisplay, accuracy_score,
                              classification_report, f1_score)
 from sklearn.model_selection import StratifiedGroupKFold, cross_val_predict
 
-ML_DIR = Path(__file__).resolve().parent
-DATA_FILE = ML_DIR.parent / "data" / "sensor_readings.csv"
+from collar import DATA_DIR, ML_DIR, MOODS, SAMPLE_WRAP
+from features import (HOP, MISSING, SAMPLE_HZ, WINDOW, WINDOW_SECONDS,
+                      compute_window_features)
+
+DATA_FILE = DATA_DIR / "sensor_readings.csv"
 OUTPUT_DIR = ML_DIR / "trained_models"
 
-MOODS = list(json.loads((ML_DIR / "moods.json").read_text(encoding="utf-8")))
-
-SAMPLE_HZ = 25        # packet rate of the firmware
-WINDOW_SECONDS = 8
-HOP_SECONDS = 4       # windows overlap by half
-MAX_GAP_PACKETS = 5   # a longer run of dropped packets splits the recording
+MAX_GAP_SAMPLES = 10  # a longer run of dropped samples splits the recording
 MIN_SESSIONS = 2      # per mood, to be able to test on an unseen session
-GRAVITY = 9.81
-
-WINDOW = WINDOW_SECONDS * SAMPLE_HZ
-HOP = HOP_SECONDS * SAMPLE_HZ
-CONTEXT_COLUMNS = ["hour", "mins_since_fed", "mins_since_potty", "owner_away"]
-
-
-def band_fractions(signal):
-    """Share of motion energy in slow, medium and fast bands, plus the peak frequency."""
-    spectrum = np.abs(np.fft.rfft(signal - signal.mean())) ** 2
-    freqs = np.fft.rfftfreq(len(signal), d=1.0 / SAMPLE_HZ)
-    total = spectrum[freqs >= 0.5].sum()
-    if total <= 0:
-        return 0.0, 0.0, 0.0, 0.0
-
-    def share(low, high):
-        return spectrum[(freqs >= low) & (freqs < high)].sum() / total
-
-    peak = freqs[np.argmax(np.where(freqs >= 0.5, spectrum, 0))]
-    return share(0.5, 3), share(3, 8), share(8, SAMPLE_HZ / 2 + 1), peak
-
-
-def compute_window_features(window_df, use_context=True):
-    """Compute features from one 8-second window of collar data.
-
-    The mobile app must compute exactly these features, in this order.
-    """
-    features = {}
-
-    # Motion: how much, how sudden, and at what rhythm
-    accel = np.linalg.norm(window_df[["accel_x", "accel_y", "accel_z"]].to_numpy(), axis=1)
-    features["accel_mean"] = accel.mean()
-    features["accel_std"] = accel.std()
-    features["accel_max"] = accel.max()
-    features["accel_range"] = accel.max() - accel.min()
-    features["jerk_mean"] = np.abs(np.diff(accel)).mean() * SAMPLE_HZ
-    features["active_fraction"] = (np.abs(accel - GRAVITY) > 1.0).mean()
-    slow, medium, fast, peak = band_fractions(accel)
-    features["motion_slow_share"] = slow      # walking, pacing
-    features["motion_medium_share"] = medium  # trotting, scratching
-    features["motion_fast_share"] = fast      # shaking, trembling
-    features["motion_peak_hz"] = peak
-
-    gyro = np.linalg.norm(window_df[["gyro_x", "gyro_y", "gyro_z"]].to_numpy(), axis=1)
-    features["gyro_mean"] = gyro.mean()
-    features["gyro_std"] = gyro.std()
-    features["gyro_max"] = gyro.max()
-
-    # Sound: how loud, how often, and at what pitch
-    rms = window_df["audio_rms"].to_numpy(dtype=float)
-    loudness = np.log10(rms + 1.0)
-    features["loudness_mean"] = loudness.mean()
-    features["loudness_std"] = loudness.std()
-    features["loudness_max"] = loudness.max()
-
-    # A frame counts as vocal when it stands well above the window's quiet level
-    vocal = rms > 4.0 * np.percentile(rms, 10) + 50.0
-    features["vocal_fraction"] = vocal.mean()
-    features["vocal_bursts"] = np.count_nonzero(np.diff(vocal.astype(int)) == 1)
-    if vocal.any():
-        features["vocal_pitch_hz"] = window_df["dom_freq_hz"].to_numpy()[vocal].mean()
-        features["vocal_centroid_hz"] = window_df["centroid_hz"].to_numpy()[vocal].mean()
-        features["vocal_zcr"] = window_df["zcr"].to_numpy()[vocal].mean()
-    else:
-        features["vocal_pitch_hz"] = 0.0
-        features["vocal_centroid_hz"] = 0.0
-        features["vocal_zcr"] = 0.0
-
-    # Context the sensors cannot see; -1 means the event was never logged
-    if use_context:
-        for column in CONTEXT_COLUMNS:
-            value = window_df[column].iloc[-1] if column in window_df else np.nan
-            features[column] = -1.0 if pd.isna(value) else float(value)
-
-    return features
+CONFIDENCE = 0.5      # below this, the live script says "not sure" instead of guessing
 
 
 class MoodModelTrainer:
@@ -136,7 +60,7 @@ class MoodModelTrainer:
 
         summary = self.df.groupby("mood").agg(
             sessions=("session_id", "nunique"),
-            minutes=("seq", lambda s: round(len(s) / SAMPLE_HZ / 60, 1)),
+            minutes=("sample", lambda s: round(len(s) / SAMPLE_HZ / 60, 1)),
         )
         print("[DATA] Per mood:")
         print(summary.to_string())
@@ -151,8 +75,8 @@ class MoodModelTrainer:
             mood = session_df["mood"].iloc[0]
 
             # Never let a window span a break in the recording
-            gap = session_df["seq"].diff().fillna(1).mod(65536)
-            for _, run in session_df.groupby((gap > MAX_GAP_PACKETS).cumsum()):
+            gap = session_df["sample"].diff().fillna(1).mod(SAMPLE_WRAP)
+            for _, run in session_df.groupby((gap > MAX_GAP_SAMPLES).cumsum()):
                 for start in range(0, len(run) - WINDOW + 1, HOP):
                     window = run.iloc[start:start + WINDOW]
                     rows.append(compute_window_features(window, self.use_context))
@@ -176,7 +100,7 @@ class MoodModelTrainer:
 
     def new_model(self):
         return RandomForestClassifier(
-            n_estimators=200,
+            n_estimators=300,
             min_samples_leaf=2,
             random_state=42,
             n_jobs=-1,
@@ -187,16 +111,25 @@ class MoodModelTrainer:
         """Score the model on sessions held out of training"""
         print("\n[EVAL] Testing on held-out sessions...")
 
+        classes = np.unique(y)
         n_splits = min(5, pd.Series(groups).groupby(y).nunique().min())
         folds = StratifiedGroupKFold(n_splits=n_splits, shuffle=True, random_state=42)
-        y_pred = cross_val_predict(self.new_model(), X, y, groups=groups, cv=folds)
+        proba = cross_val_predict(self.new_model(), X, y, groups=groups, cv=folds,
+                                  method="predict_proba")
+        y_pred = classes[proba.argmax(axis=1)]
 
-        classes = sorted(set(y))
         accuracy = accuracy_score(y, y_pred)
         baseline = pd.Series(y).value_counts(normalize=True).max()
         print(f"[EVAL] Accuracy:  {accuracy:.1%}  "
               f"(always guessing the most common mood scores {baseline:.1%})")
         print(f"[EVAL] Macro F1:  {f1_score(y, y_pred, average='macro'):.2f}")
+
+        # The live script stays silent when unsure; this is how often it speaks, and how well
+        sure = proba.max(axis=1) >= CONFIDENCE
+        sure_accuracy = accuracy_score(y[sure], y_pred[sure]) if sure.any() else 0.0
+        print(f"[EVAL] When at least {CONFIDENCE:.0%} confident: speaks {sure.mean():.1%} "
+              f"of the time, right {sure_accuracy:.1%} of those times")
+
         print("\n[CLASSIFICATION REPORT]")
         print(classification_report(y, y_pred, labels=classes, zero_division=0))
 
@@ -209,10 +142,14 @@ class MoodModelTrainer:
         display.figure_.savefig(plot_file, dpi=150)
         plt.close(display.figure_)
         print(f"[PLOT] Confusion matrix saved to {plot_file}")
-        return accuracy
+        return {
+            "held_out_accuracy": round(float(accuracy), 4),
+            "confident_accuracy": round(float(sure_accuracy), 4),
+            "confident_share": round(float(sure.mean()), 4),
+        }
 
     def train_final_model(self, X, y):
-        """Fit on every window for the model the app will use"""
+        """Fit on every window for the model the live script will use"""
         print("\n[TRAIN] Training final model on all sessions...")
         self.model = self.new_model().fit(X, y)
 
@@ -221,17 +158,18 @@ class MoodModelTrainer:
         for importance, name in ranked[:10]:
             print(f"         {name:22s} {importance:.3f}")
 
-    def save_model(self, accuracy):
-        """Save trained model and the details the app needs to use it"""
+    def save_model(self, X, scores):
+        """Save trained model and the details live_predict.py needs to use it"""
         model_file = self.output_dir / "dog_mood_model.joblib"
         joblib.dump(self.model, model_file)
 
         metadata = {
             "classes": list(self.model.classes_),
             "feature_names": self.feature_names,
-            "sample_hz": SAMPLE_HZ,
-            "window_seconds": WINDOW_SECONDS,
-            "held_out_accuracy": round(float(accuracy), 4),
+            "use_context": self.use_context,
+            "uses_heart_rate": bool((X["hr_mean"] != MISSING).any()),
+            "confidence_threshold": CONFIDENCE,
+            **scores,
         }
         metadata_file = self.output_dir / "model_metadata.json"
         metadata_file.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
@@ -264,12 +202,12 @@ def main():
         return 1
 
     trainer.output_dir.mkdir(parents=True, exist_ok=True)
-    accuracy = trainer.evaluate(X, y, groups)
+    scores = trainer.evaluate(X, y, groups)
     trainer.train_final_model(X, y)
-    trainer.save_model(accuracy)
+    trainer.save_model(X, scores)
 
     print("\n" + "=" * 50)
-    print("Model training complete!")
+    print("Model training complete! Try it live: python live_predict.py")
     print("=" * 50)
     return 0
 

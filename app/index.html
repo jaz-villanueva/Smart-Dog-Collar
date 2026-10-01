@@ -39,6 +39,38 @@
       <ul class="history" id="history"><li class="empty">Nothing yet.</li></ul>
     </section>
 
+    <section id="tab-camera" class="tab" hidden>
+      <canvas id="view" class="view" width="320" height="240"></canvas>
+      <p class="detail" id="camera-state">Camera is off.</p>
+      <div class="actions">
+        <button type="button" class="primary" id="camera-toggle">Start camera</button>
+        <button type="button" id="empty-cage" disabled>Take empty-cage picture</button>
+      </div>
+      <h2>Setting it up</h2>
+      <ol class="steps">
+        <li>Fix this phone so it sees the whole cage floor, and plug it in. It must not move afterwards.</li>
+        <li>Start the camera. With him out of the cage, take the empty-cage picture.</li>
+        <li>Put him back. A box should follow him, and stay on him when he lies still.</li>
+        <li>Retake the picture whenever the phone, the cage or his bedding moves.</li>
+      </ol>
+      <p class="hint">The pictures stay on this phone; nothing is uploaded. The camera works only while this screen is open.</p>
+      <video id="video" playsinline muted hidden></video>
+    </section>
+
+    <section id="tab-record" class="tab" hidden>
+      <p class="detail" id="record-state"></p>
+      <div class="chips" id="moods"></div>
+      <button type="button" id="pause" class="wide" disabled>Stop labelling</button>
+      <dl class="facts">
+        <div><dt>Recorded and not yet saved</dt><dd id="recorded">0 s</dd></div>
+      </dl>
+      <div class="actions">
+        <button type="button" class="primary" id="save" disabled>Save recording</button>
+        <button type="button" id="discard" disabled>Discard</button>
+      </div>
+      <p class="hint">Saving downloads a CSV file. Copy it into the <code>data/phone/</code> folder on your computer and run the trainer. The recording is held in memory, so save before closing the app. If the camera is on, his position is recorded too.</p>
+    </section>
+
     <section id="tab-collar" class="tab" hidden>
       <div class="actions">
         <button type="button" class="primary" id="connect">Connect collar</button>
@@ -60,6 +92,8 @@
 
   <nav>
     <button type="button" data-tab="talk" aria-current="page">Talk</button>
+    <button type="button" data-tab="camera">Camera</button>
+    <button type="button" data-tab="record">Record</button>
     <button type="button" data-tab="collar">Collar</button>
   </nav>
 

@@ -16,7 +16,7 @@ A one-month vlog project building a wearable dog mood detector using an ESP32, a
 - **Firmware:** Arduino C++, binary BLE packets with 50 Hz motion and a 12-band sound spectrum at 25 Hz
 - **ML:** Random Forest classifier on 8-second windows of motion, sound, location, heart rate and context
 - **Live:** a laptop script that runs the model and speaks the phrase, staying quiet when it is not sure
-- **App:** TinyTalk, a web app that installs on a phone, connects to the collar and speaks the phrases. A first version; see [`app/`](app/).
+- **App:** TinyTalk, a web app that installs on a phone, connects to the collar, can use the phone as the cage camera, records labelled data and speaks the phrases. A first version; see [`app/`](app/).
 - **Ground truth:** the mood you type into the data logger while watching your dog
 
 **Mood Classes:** Playful, Sleepy, Hungry, Potty, Sad, Lonely, Anxious, Alert, Content, Stressed
@@ -67,7 +67,7 @@ These are renders of the 3D model, not photos:
 | Tail, ear and posture tracking (pose model) | Not started. |
 | Housing for the carrier-board build | Modelled; not yet printed. See [`hardware/enclosure/`](hardware/enclosure/). |
 | Starter dataset and model | **Synthetic**, for running the scripts only; says nothing about a real dog. See [`data/starter/`](data/starter/). |
-| TinyTalk web app | First version. Demo mode and the model arithmetic tested; not yet connected to a real collar. See [`app/`](app/). |
+| TinyTalk web app | First version, with phone-as-camera and recording. Demo mode, the model arithmetic and the camera tracker (on made-up pictures) tested; not yet used with a real collar, cage or dog. See [`app/`](app/). |
 | On-collar speaker, real dog dataset | Not started. |
 
 ---

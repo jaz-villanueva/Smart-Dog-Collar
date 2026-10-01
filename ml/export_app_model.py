@@ -46,6 +46,24 @@ def blank_to_none(value):
     return None if pd.isna(value) else float(value)
 
 
+def add_camera_track(window):
+    """Give a window a made-up camera track: unseen at first, then wandering."""
+    rng = np.random.default_rng(len(window))
+    packets = len(window) // 2
+    track = {
+        "cam_x": 0.5 + np.cumsum(rng.normal(scale=0.01, size=packets)),
+        "cam_y": 0.6 + np.cumsum(rng.normal(scale=0.01, size=packets)),
+        "cam_w": rng.uniform(0.15, 0.3, size=packets),
+        "cam_h": rng.uniform(0.1, 0.2, size=packets),
+        "cam_area": rng.uniform(0.02, 0.05, size=packets),
+        "cam_motion": rng.uniform(0, 0.05, size=packets),
+    }
+    for column, values in track.items():
+        values = np.round(values, 4)
+        values[:20] = np.nan
+        window[column] = np.repeat(values, 2)
+
+
 def export_sample(model, metadata, data_file):
     """A few windows as the app would see them, with Python's answers."""
     df = pd.read_csv(data_file, dtype={"session_id": str})
@@ -53,7 +71,9 @@ def export_sample(model, metadata, data_file):
     step = max(1, len(sessions) // SAMPLE_WINDOWS)
     windows = []
     for session in sessions[::step][:SAMPLE_WINDOWS]:
-        window = session.iloc[:WINDOW]
+        window = session.iloc[:WINDOW].copy()
+        if len(windows) % 2:
+            add_camera_track(window)   # so the app's camera arithmetic is checked too
         features = compute_window_features(window, metadata["use_context"])
         X = pd.DataFrame([features])[metadata["feature_names"]]
         packets = []
@@ -67,6 +87,8 @@ def export_sample(model, metadata, data_file):
                 "domHz": float(first["dom_freq_hz"]),
                 "zcr": float(first["zcr"]),
                 "bands": [float(first[c]) for c in BAND_COLUMNS],
+                "cam": None if pd.isna(first["cam_x"]) else {
+                    k: float(first[f"cam_{k}"]) for k in ("x", "y", "w", "h", "area", "motion")},
             })
         last = window.iloc[-1]
         windows.append({
@@ -97,8 +119,8 @@ def main():
     model_dir = Path(args.model_dir)
     model = joblib.load(model_dir / "dog_mood_model.joblib")
     metadata = json.loads((model_dir / "model_metadata.json").read_text(encoding="utf-8"))
-    if metadata["uses_heart_rate"] or metadata.get("uses_camera"):
-        print("[EXPORT] Warning: this model was trained with a heart-rate strap or camera, "
+    if metadata["uses_heart_rate"]:
+        print("[EXPORT] Warning: this model was trained with a heart-rate strap, "
               "which the app does not have. Its guesses in the app will be worse.")
 
     exported = {
@@ -107,6 +129,7 @@ def main():
         "confidence_threshold": metadata["confidence_threshold"],
         "held_out_accuracy": metadata["held_out_accuracy"],
         "synthetic": args.synthetic,
+        "uses_camera": bool(metadata.get("uses_camera")),
         "phrases": PHRASES,
         "trees": [export_tree(e) for e in model.estimators_],
     }

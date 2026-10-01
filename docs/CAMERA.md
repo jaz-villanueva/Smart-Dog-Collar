@@ -7,6 +7,15 @@ A fixed camera on his cage is how the system knows where he is. It adds two thin
 
 **Status:** written and tested on a synthetic video (a dark shape moving across a plain background). Not yet run on a real camera or a real dog.
 
+Two cameras can do this job:
+
+| Camera | Runs on | Use it when |
+|--------|---------|-------------|
+| USB webcam or Wi-Fi camera | The laptop, with the Python scripts below | You want video saved so you can label afterwards |
+| A phone, in the TinyTalk app | The phone itself; see [`app/README.md`](../app/README.md) | You want live moods with no laptop |
+
+The two measure the picture differently, so a model must be trained on recordings from the camera it will use live.
+
 ## What it does not do
 
 - **No tail, ear or face tracking.** It sees an outline, not body parts. Those need an animal pose model such as DeepLabCut's quadruped model, which is the next step and is not built.

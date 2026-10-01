@@ -99,4 +99,9 @@ data/recordings/
 
 # PCB renders are tracked
 !hardware/pcb/*.png
+!hardware/enclosure/*.png
 *.kicad_prl
+
+# Synthetic starter model is tracked
+!ml/starter_model/
+!ml/starter_model/*.joblib

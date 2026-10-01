@@ -22,13 +22,13 @@ A one-month vlog project building a wearable dog mood detector using an ESP32, a
 
 **Mood Classes:** Playful, Sleepy, Hungry, Potty, Sad, Lonely, Anxious, Alert, Content, Stressed
 
-The list and the phrases for each mood live in [`ml/moods.json`](ml/moods.json). Edit that one file to add, remove or reword them.
+The list and the phrases for each mood live in [`ml/moods.json`](ml/moods.json). Edit that one file to add, remove or reword them. Which sensor, signal and feature stands behind each phrase is in [`docs/MOODS.md`](docs/MOODS.md).
 
 ![Exploded view of the wearable](docs/images/wearable_exploded.svg)
 
 ![The wearable on a harness, on the dog's back](docs/images/wearable_on_dog.svg)
 
-Shopping list: [`docs/PH_SHOPPING_LIST.md`](docs/PH_SHOPPING_LIST.md).
+Shopping list, with Shopee and Lazada search links: [`docs/PH_SHOPPING_LIST.md`](docs/PH_SHOPPING_LIST.md).
 
 ### Carrier board (optional)
 
@@ -44,6 +44,15 @@ The bare board, top and bottom:
 ![Bare carrier board, top](hardware/pcb/render_top.png)
 ![Bare carrier board, bottom](hardware/pcb/render_bottom.png)
 
+### Housing
+
+A two-part printed case for the carrier-board build, with rounded edges, a USB-C opening, a switch slot and a microphone hole. It is modelled but not yet printed. Files and print settings are in [`hardware/enclosure/`](hardware/enclosure/).
+
+These are renders of the 3D model, not photos:
+
+![Render of the housing, closed, with strap slots](hardware/enclosure/render_assembled.png)
+![Render of the housing with the lid lifted](hardware/enclosure/render_open.png)
+
 ### What is built and what is not
 
 | Part | State |
@@ -57,7 +66,9 @@ The bare board, top and bottom:
 | Live prediction | Written. Tested by replaying synthetic packets; not yet run against a real collar. |
 | Cage camera, unattended recording, video labelling | Written. Tested on a synthetic video; not yet run on a real camera or dog. |
 | Tail, ear and posture tracking (pose model) | Not started. |
-| Mobile app, collar housing, on-collar speaker, sample dataset | Not started. |
+| Housing for the carrier-board build | Modelled; not yet printed. See [`hardware/enclosure/`](hardware/enclosure/). |
+| Starter dataset and model | **Synthetic**, for running the scripts only; says nothing about a real dog. See [`data/starter/`](data/starter/). |
+| Mobile app, on-collar speaker, real dog dataset | Not started. |
 
 ---
 
@@ -76,18 +87,23 @@ dog-mood-collar-vlog/
 │   ├── ble_data_logger.py            # Record sensor data + label moods
 │   ├── train_mood_model.py           # Train and test the classifier
 │   ├── live_predict.py               # Say his mood live
+│   ├── make_starter_dataset.py       # Writes the synthetic starter data
+│   ├── starter_model/                # Model trained on the synthetic data
 │   ├── camera.py                     # Cage camera tracker
 │   ├── label_video.py                # Label a recording from its video
 │   └── requirements.txt
 ├── hardware/
 │   ├── WEARABLE_BUILD.md             # The light version he wears
 │   ├── pcb/                          # Optional carrier board (KiCad, Gerbers, renders)
+│   ├── enclosure/                    # Printable housing for the carrier board (STL, STEP)
 │   ├── BOM.csv                       # Bench prototype bill of materials
 │   └── WIRING_REFERENCE.txt          # Bench prototype connections and checks
 ├── data/                             # Your recordings (git-ignored)
+│   └── starter/                      # Synthetic starter dataset
 ├── app/                              # Flutter app (to be added)
 └── docs/
     ├── PH_SHOPPING_LIST.md           # What to buy, and what not to
+    ├── MOODS.md                      # Sensor, signal, features and phrase for each mood
     ├── CAMERA.md                     # Cage camera setup and labelling from video
     ├── images/                       # Drawings
     └── ...                           # Older checklists*

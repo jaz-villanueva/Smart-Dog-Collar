@@ -4,6 +4,10 @@ The ESP32 breadboard build is for the bench. This is the version he wears. It is
 
 **Status:** designed, not yet built. The weights and battery life below are estimates from typical part figures. Weigh the finished unit and measure the runtime before relying on them.
 
+![Exploded view of the wearable](../docs/images/wearable_exploded.svg)
+
+What to buy and where: [`docs/PH_SHOPPING_LIST.md`](../docs/PH_SHOPPING_LIST.md).
+
 ## Why there is no custom PCB
 
 The idea of a custom PCB was to save weight. A ready-made board already does that better: the **Seeed XIAO nRF52840 Sense** is 21 × 18 mm and carries the processor, Bluetooth radio and antenna, a 6-axis motion sensor, a microphone and a LiPo charger. A custom board with the same parts would weigh about the same, cost more for a five-board minimum order, and add the risk of a first-time radio layout and fine-pitch assembly.

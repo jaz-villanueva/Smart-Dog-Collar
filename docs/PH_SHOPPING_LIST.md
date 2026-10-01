@@ -1,159 +1,72 @@
-# 🐕 Dog Collar Sensors - Philippines Shopping List
+# Shopping List (Philippines)
 
-## **You Already Have:**
-✓ ESP32-WROOM-32 (already own)
-✓ Breadboards (already own)  
-✓ Soldering station + tools
+Two lists: the **wearable** he actually wears, and the optional **bench prototype** for development on the ESP32 you already own. If you only buy one thing, buy the XIAO nRF52840 **Sense**.
 
----
+Prices were looked up on 2026-10-01 where a source is given. Everything marked *estimate* is a rough budget figure that was not checked against a live listing. Check stock and price before ordering.
 
-## **WHAT YOU NEED TO BUY (₱2,200–3,500 total)**
+![Exploded view of the wearable](images/wearable_exploded.svg)
 
-### **Tier 1: CORE SENSORS** ⭐
+## 1. Wearable (required)
 
-| Component | Model | Price (₱) | Seller | Link | Status |
-|-----------|-------|----------|--------|------|--------|
-| **Heart Rate Sensor** | MAX30102 | ₱150–200 | **Makerlab.ph** | https://www.makerlab.ph/products/max30102-heart-rate-and-pulse-oximeter-sensor-module-black | ✓ IN STOCK |
-| **Temperature Sensor** | MLX90614 IR | ₱350–500 | **Shopee PH** | Search: "MLX90614" on shopee.ph | — |
-| **IMU (Accel+Gyro)** | MPU6050 | ₱120–180 | **Makerlab.ph** | Search makerlab.ph or Shopee | — |
-| **Microphone (PDM)** | INMP441 | ₱200–350 | **Shopee PH** | Search: "INMP441" on shopee.ph | — |
+| # | Item | What to look for | Qty | Price | Where |
+|---|------|------------------|-----|-------|-------|
+| 1 | **Seeed Studio XIAO nRF52840 Sense** | The name must include **Sense**. Buy the version **without** pre-soldered header pins: pins add weight and height. | 1 | US$16.90 listed by Seeed [1]; expect roughly ₱1,500–2,000 locally (*estimate*) | Seeed Studio [1], or search "XIAO nRF52840 Sense" on Shopee / Lazada |
+| 2 | LiPo cell, 3.7 V, 100–150 mAh, **with protection circuit** | Size code 401020 (4 × 10 × 20 mm) or 501225. Listing should say "with PCM" or "protected". Bare wire leads are fine. | 2 | ₱100–200 each (*estimate*) | Shopee: "3.7V 150mAh lipo 401020" |
+| 3 | Sub-miniature slide switch | SPDT, about 7 × 3 mm | 2 | ₱5–20 each (*estimate*) | Shopee: "mini slide switch SS12D00" |
+| 4 | Thin stranded wire, 30 AWG silicone | A short length, two colours | 1 | ₱50–100 (*estimate*) | Shopee: "30AWG silicone wire" |
+| 5 | Kapton (polyimide) tape | To insulate the battery joints | 1 | ₱50–100 (*estimate*) | Shopee: "kapton tape 10mm" |
+| 6 | TPU or PETG filament | For the housing; TPU is softer against him | small amount | ₱150–250 if you need a spool (*estimate*) | Lazada / Shopee, or a makerspace |
+| 7 | **Puppy harness, XXS** | Soft mesh step-in type, adjustable. He will outgrow it. | 1 | ₱150–300 (*estimate*) | Pet shop, so you can fit it on him |
+| 8 | Sew-on Velcro, 16–20 mm wide | To fix the housing to the harness | 1 | ₱50–100 (*estimate*) | Shopee / craft shop |
+| 9 | USB-C data cable | For flashing and charging; many cables are charge-only | 1 | probably owned | — |
 
-### **Tier 2: POWER & HOUSING**
+**Wearable total:** about ₱2,200–3,300 (*estimate*), most of it the XIAO.
 
-| Component | Model | Price (₱) | Seller | Link | Status |
-|-----------|-------|----------|--------|------|--------|
-| **LiPo Battery** | 1000mAh 3.7V | ₱250–350 | **Shopee PH** | Search: "1000mAh LiPo" on shopee.ph | — |
-| **Charging Module** | TP4056 | ₱80–150 | **Shopee PH** | Search: "TP4056" on shopee.ph | — |
-| **USB-C Breakout** | — | ₱100–200 | **Shopee PH** | Search: "USB-C breakout board" | — |
-| **PETG Filament** | 250g spool | ₱150–250 | **Lazada.com.ph** | Search: "PETG filament" on lazada.com.ph | — |
-| **Neoprene Backing** | — | ₱100–200 | **Shopee PH** | Search: "neoprene fabric" or "dog collar material" | — |
-| **Velcro Straps** | — | ₱50–100 | **Shopee PH** | Search: "velcro adhesive" | — |
+> **Careful with local listings.** Makerlab lists a "Seeed Studio XIAO nRF52840" at ₱1,500 [2]. That is the plain board, with **no motion sensor and no microphone**, and it showed as out of stock on 2026-10-01. It will not work for this project.
 
-### **Tier 3: SUPPORT COMPONENTS**
+Buy a second battery and switch. They are cheap, and the solder pads are small enough that a spare is worth having.
 
-| Component | Qty | Price (₱) | Seller | Notes |
-|-----------|-----|----------|--------|-------|
-| **Resistor Kit** (10kΩ, pull-ups) | 1 | ₱50–100 | **Shopee PH** | Search: "resistor assortment" |
-| **Capacitor Kit** | 1 | ₱50–100 | **Shopee PH** | Decoupling caps (0.1µF, 10µF) |
-| **Jumper Wire Set** | 1 | ₱50–80 | **Shopee PH** | You might already have |
-| **Perfboard** | 1 | ₱50–100 | **Shopee PH** | If you don't have extra |
+## 2. Location beacons (recommended)
 
----
+They tell the model whether he is at his bowl, the door or his bed, which is the best evidence for hungry, potty and sleepy.
 
-## **QUICK SHOPPING LINKS (Copy & Paste)**
+| Item | What to look for | Qty | Price | Where |
+|------|------------------|-----|-------|-------|
+| Any ESP32 board | The ESP32-WROOM you already own works as one. "ESP32-C3 Super Mini" boards are the cheapest. | 3 (buy 2) | ₱150–300 each (*estimate*) | Shopee: "ESP32 C3 super mini" |
+| USB phone charger + cable | One per beacon | 3 | probably owned | — |
 
-### **Makerlab.ph** (Recommended - Philippine-based)
-- MAX30102: https://www.makerlab.ph/products/max30102-heart-rate-and-pulse-oximeter-sensor-module-black (₱150)
-- Browse all sensors: https://makerlab.ph/collections/sensors
+## 3. Bench prototype (optional)
 
-### **Shopee.ph** (Most Sensor Options)
-1. Go to https://shopee.ph
-2. Search: "MPU6050" (₱120–180)
-3. Search: "MLX90614" (₱350–500)
-4. Search: "INMP441" (₱200–350)
-5. Search: "1000mAh LiPo" (₱250–350)
-6. Search: "TP4056" (₱80–150)
+Only if you want to develop on the ESP32 before the XIAO arrives. This build is too heavy for him to wear. The full list with quantities is in [`hardware/BOM.csv`](../hardware/BOM.csv).
 
-### **Lazada.com.ph** (Filament, General Parts)
-1. Go to https://lazada.com.ph
-2. Search: "PETG filament" (₱150–250)
-3. Search: "neoprene fabric" (₱100–200)
+| Item | Qty | Price (*estimate*) |
+|------|-----|--------------------|
+| MPU6050 motion sensor module | 1 | ₱250 |
+| INMP441 I2S microphone module | 1 | ₱150 |
+| LiPo 1000 mAh with protection | 1 | ₱300 |
+| TP4056 charger module with protection (6 pads) | 1 | ₱100 |
+| HT7333 or MCP1700-3302 regulator | 2 | ₱50 |
 
----
+## Do not buy
 
-## **ORDERING STRATEGY (Next 3 Days)**
+Earlier versions of this project listed these. They do not work for a small dog, or are not good for him.
 
-**Day 1 (TODAY):**
-- ✓ Order MAX30102 from **Makerlab.ph** (fastest, local)
-- ✓ Order MPU6050 from **Shopee** (compare 2–3 sellers, pick next-day delivery)
-- ✓ Order PETG filament from **Lazada** (for 3D housing)
+| Item | Why not |
+|------|---------|
+| MAX30102 heart-rate sensor | Optical; does not read through fur |
+| MLX90614 IR thermometer | Reads the fur surface, not body temperature |
+| HC-SR04 ultrasonic sensor | Emits 40 kHz sound that dogs can hear, next to his ears |
+| VL53L0X distance sensor | Adds no mood information |
+| PAM8403 amplifier and speaker | Extra weight and loud sound at his head; the laptop speaks instead |
+| 1000 mAh battery for the wearable | About 20 g, heavier than the whole wearable |
+| Custom JLCPCB board | Not lighter than the XIAO; see [`hardware/WEARABLE_BUILD.md`](../hardware/WEARABLE_BUILD.md) |
 
-**Day 2:**
-- Order remaining sensors (MLX90614, INMP441, TP4056, LiPo, USB-C) from Shopee
-- Look for "same-day delivery" or "next-day delivery" options in your area (Metro Manila likely has this)
+## Tools
 
-**Day 3:**
-- Most packages arrive (hopefully)
-- Start testing on breadboard
+Fine-tip soldering iron, thin solder, flush cutters, and a multimeter to check the battery polarity before soldering it to the board. Access to a 3D printer for the housing.
 
----
+## References
 
-## **COST BREAKDOWN**
-
-| Category | Est. Cost (₱) |
-|----------|-----------|
-| Core Sensors (4x) | ₱850–1,200 |
-| Power & Housing | ₱700–1,050 |
-| Support Components | ₱250–500 |
-| **TOTAL** | **₱1,800–2,750** |
-| **Contingency** | **+₱400–500** |
-| **GRAND TOTAL** | **~₱2,200–3,500** |
-
-*Note: You already have ESP32, breadboards, soldering equipment — this total covers only new sensors.*
-
----
-
-## **PRO TIPS FOR PHILIPPINES SHOPPING**
-
-1. **Shopee ShopeePay discounts**: Look for vouchers (usually -₱20 to -₱50)
-2. **Free shipping thresholds**: Many sellers offer free shipping over ₱500 in a single order
-3. **Seller ratings**: Always check 4.8+ rating on Shopee; read recent reviews
-4. **Delivery speed**: Look for "Next Day Delivery" or "Same Day Delivery" options — Metro Manila has lots
-5. **Bulk discounts**: If buying multiple sensors from same seller, message them for better prices (negotiable on Shopee)
-6. **Avoid stock-outs**: Order MAX30102 ASAP — sensor is popular for Arduino projects
-
----
-
-## **ALTERNATIVE SUPPLIERS (If Out of Stock)**
-
-### **If MLX90614 runs out:**
-- Use simple **LM35** (linear temp sensor) instead ₱80–150 (less accurate but works)
-
-### **If INMP441 runs out:**
-- Use **KY-038 sound detector** instead ₱100–150 (simpler, fewer I2S pins needed)
-
-### **If TP4056 runs out:**
-- Use **MicroUSB TP4056** variant (slightly different footprint but same function) ₱100–180
-
----
-
-## **SAMPLE SHOPEE SEARCH TERMS** (Copy exact phrases)
-
-```
-MAX30102 sensor Arduino
-MPU6050 gyroscope accelerometer
-MLX90614 infrared temperature
-INMP441 microphone I2S
-1000mAh LiPo 3.7V
-TP4056 charging module
-USB-C breakout board
-PETG 3D printer filament
-Neoprene dog collar material
-Velcro adhesive strip
-10kΩ resistor kit
-Capacitor assortment pack
-```
-
----
-
-## **TOTAL TIMELINE TO DELIVERY**
-
-| Day | Action | Expected Status |
-|-----|--------|-----------------|
-| **Today** | Order MAX30102, MPU6050, PETG | Seller processes |
-| **Tomorrow** | Order remaining sensors | Seller processes |
-| **Day 3** | First packages start arriving (Makerlab, Shopee next-day) | ✓ Ready to test |
-| **Day 4–5** | Remaining packages arrive | ✓ All sensors in hand |
-
-By **Day 5**, you should have everything ready to start **Week 1 hardware testing**. ✓
-
----
-
-## **QUESTIONS WHILE ORDERING?**
-
-If any sensor is out of stock:
-1. Check the "Alternative" section above
-2. Message the Shopee seller directly (they often have similar variants)
-3. Post on **r/Philippines** or **DLSU Discord electronics channel** for local recommendations
-
-**Good luck, Jaz! Start ordering today so sensors arrive by weekend. 🚀**
+1. Seeed Studio, "Seeed Studio XIAO nRF52840 Sense (Pre-Soldered)" product page, price and specifications as shown in search results on 2026-10-01. https://www.seeedstudio.com/Seeed-Studio-XIAO-nRF52840-Sense-Pre-Soldered-p-6330.html (This link is the pre-soldered variant; choose the version without headers.)
+2. Makerlab Electronics, "Seeed Studio XIAO nRF52840" product page, ₱1,500 and out of stock as shown in search results on 2026-10-01. https://makerlab.ph/products/seeed-studio-xiao-nrf52840
+3. RobotShop, "Seeed Studio XIAO nRF52840 Sense" product page, 21 × 17.5 mm board size, retrieved 2026-10-01. https://www.robotshop.com/products/seeedstudio-seeed-studio-xiao-nrf52840-sense-tinyml-tensorflow-lite-imu-microphone-bluetooth-50

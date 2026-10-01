@@ -65,6 +65,8 @@ LiPo −  ──────────────────► XIAO BAT− 
 
 ## Housing and mounting
 
+![The wearable on a harness, on the dog's back](../docs/images/wearable_on_dog.svg)
+
 - **Mount it on a harness, on his back between the shoulders, not on a neck collar.** That keeps the weight off his throat, and the sensor still picks up his movement and voice.
 - Round every edge and leave nothing he can catch a tooth or claw on.
 - Close the case completely so the battery cannot be reached; glue or screw it shut.

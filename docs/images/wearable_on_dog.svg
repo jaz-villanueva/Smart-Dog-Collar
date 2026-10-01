@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 640" width="900" height="640" role="img"
+     aria-label="Side view of a small puppy wearing a harness with the wearable mounted on his back between the shoulders">
+<style>
+  .h { font: 600 22px system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #111827; }
+  .s { font: 14px system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #4b5563; }
+  .t { font: 600 15px system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #111827; }
+  .d { font: 13px system-ui, -apple-system, 'Segoe UI', sans-serif; fill: #4b5563; }
+  .fur { fill: #ecd0a8; stroke: #5b4632; stroke-width: 2.5; stroke-linejoin: round; }
+  .far { fill: #d6b384; stroke: #5b4632; stroke-width: 2.5; stroke-linejoin: round; }
+  .strap { fill: none; stroke: #6f97bf; stroke-width: 22; stroke-linecap: round; }
+  .edge { fill: none; stroke: #3f5f82; stroke-width: 26; stroke-linecap: round; }
+  .lead { fill: none; stroke: #6b7280; stroke-width: 1; }
+</style>
+<defs>
+  <clipPath id="torso">
+    <ellipse cx="380" cy="372" rx="178" ry="98"/>
+    <path d="M480 290 C520 250 560 232 590 228 L640 320 C604 344 574 392 556 440 L480 440 Z"/>
+  </clipPath>
+  <clipPath id="neckin">
+    <path d="M487 297 C523 259 560 241 587 237 L630 318 C598 342 568 390 550 436 L487 436 Z"/>
+  </clipPath>
+</defs>
+<rect width="900" height="640" fill="#ffffff"/>
+<text x="32" y="44" class="h">Wearable on the dog</text>
+<text x="32" y="68" class="s">Mounted on a harness, on his back between the shoulders</text>
+
+<!-- ground shadow -->
+<ellipse cx="400" cy="566" rx="250" ry="14" fill="#eef0f3"/>
+
+<!-- tail -->
+<path d="M214 338 C170 320 150 270 176 228" fill="none" stroke="#5b4632" stroke-width="27" stroke-linecap="round"/>
+<path d="M214 338 C170 320 150 270 176 228" fill="none" stroke="#ecd0a8" stroke-width="22" stroke-linecap="round"/>
+
+<!-- far legs -->
+<rect x="246" y="410" width="40" height="140" rx="18" class="far"/>
+<rect x="470" y="410" width="38" height="140" rx="18" class="far"/>
+
+<!-- neck and chest, then body; the last ellipse erases the body outline where they join -->
+<path d="M480 290 C520 250 560 232 590 228 L640 320 C604 344 574 392 556 440 L480 440 Z" class="fur"/>
+<ellipse cx="380" cy="372" rx="178" ry="98" class="fur"/>
+<ellipse cx="380" cy="372" rx="178" ry="98" fill="none" stroke="#ecd0a8" stroke-width="6" clip-path="url(#neckin)"/>
+
+<!-- near legs -->
+<rect x="282" y="420" width="44" height="136" rx="20" class="fur"/>
+<rect x="506" y="420" width="42" height="136" rx="20" class="fur"/>
+<path d="M286 440 C296 426 314 426 322 440" fill="#ecd0a8" stroke="none"/>
+<path d="M510 440 C518 426 536 426 544 440" fill="#ecd0a8" stroke="none"/>
+
+<!-- harness: girth strap behind the front legs, chest strap in front of them, and a back piece -->
+<g clip-path="url(#torso)">
+  <path d="M452 262 C470 330 470 410 452 480" class="edge"/>
+  <path d="M452 262 C470 330 470 410 452 480" class="strap"/>
+  <path d="M520 270 C560 320 574 380 560 440" class="edge"/>
+  <path d="M520 270 C560 320 574 380 560 440" class="strap"/>
+</g>
+<path d="M444 276 L528 268" class="edge" stroke-width="20"/>
+<path d="M444 276 L528 268" class="strap" stroke-width="16"/>
+
+<!-- head -->
+<circle cx="622" cy="238" r="80" class="fur"/>
+<ellipse cx="694" cy="264" rx="46" ry="33" class="fur"/>
+<path d="M660 240 C668 232 690 232 700 236 L700 290 L660 290 Z" fill="#ecd0a8"/>
+<ellipse cx="732" cy="252" rx="11" ry="9" fill="#3b2f25"/>
+<path d="M706 282 C716 290 728 288 734 278" fill="none" stroke="#5b4632" stroke-width="2.5" stroke-linecap="round"/>
+<circle cx="652" cy="222" r="8.5" fill="#3b2f25"/>
+<circle cx="655" cy="219" r="2.6" fill="#ffffff"/>
+<!-- ear -->
+<path d="M578 178 C548 190 540 250 560 296 C588 300 612 262 610 196 C604 180 592 174 578 178 Z" class="far"/>
+
+<!-- wearable on the back piece -->
+<g transform="rotate(-5 486 256)">
+  <rect x="458" y="238" width="56" height="26" rx="7" fill="#f4c98b" stroke="#5b4632" stroke-width="2.5"/>
+  <rect x="458" y="252" width="56" height="12" rx="6" fill="#e0ae66"/>
+  <rect x="458" y="238" width="56" height="26" rx="7" fill="none" stroke="#5b4632" stroke-width="2.5"/>
+  <circle cx="496" cy="245" r="2.6" fill="#5a4320"/>
+</g>
+
+<!-- Bluetooth waves -->
+<g fill="none" stroke="#6f97bf" stroke-width="2.5" stroke-linecap="round">
+  <path d="M470 222 A22 22 0 0 1 502 218"/>
+  <path d="M460 206 A40 40 0 0 1 512 200"/>
+  <path d="M450 190 A58 58 0 0 1 522 182"/>
+</g>
+
+<!-- callouts -->
+<polyline points="486,236 420,130 300,130" class="lead"/>
+<circle cx="486" cy="236" r="2.5" fill="#6b7280"/>
+<text x="60" y="124" class="t">Wearable</text>
+<text x="60" y="143" class="d">About 27 × 22 × 12 mm and 8–11 g (estimates)</text>
+<text x="60" y="160" class="d">Microphone hole faces up</text>
+
+<polyline points="502,176 560,112 610,112" class="lead"/>
+<text x="618" y="108" class="t">Bluetooth to the laptop</text>
+<text x="618" y="127" class="d">Keep within about 10 m</text>
+
+<polyline points="462,430 420,600 392,600" class="lead"/>
+<circle cx="462" cy="430" r="2.5" fill="#6b7280"/>
+<text x="60" y="596" class="t">Soft XXS harness</text>
+<text x="60" y="615" class="d">Carries the weight on his chest and back, not his throat</text>
+
+<polyline points="596,318 700,400 720,400" class="lead"/>
+<circle cx="596" cy="318" r="2.5" fill="#6b7280"/>
+<text x="728" y="396" class="t">Nothing on his neck</text>
+<text x="728" y="415" class="d">Small breeds have</text>
+<text x="728" y="432" class="d">delicate throats</text>
+
+<text x="520" y="615" class="s">Illustration only. Proportions are approximate.</text>
+</svg>

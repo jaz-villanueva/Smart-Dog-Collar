@@ -25,6 +25,8 @@ The list and the phrases for each mood live in [`ml/moods.json`](ml/moods.json).
 
 ![Exploded view of the wearable](docs/images/wearable_exploded.svg)
 
+![The wearable on a harness, on the dog's back](docs/images/wearable_on_dog.svg)
+
 Shopping list: [`docs/PH_SHOPPING_LIST.md`](docs/PH_SHOPPING_LIST.md).
 
 ### What is built and what is not

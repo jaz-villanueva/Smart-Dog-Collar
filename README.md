@@ -66,6 +66,7 @@ These are renders of the 3D model, not photos:
 | Live prediction | Written. Tested by replaying synthetic packets; not yet run against a real collar. |
 | Cage camera, unattended recording, video labelling | Written. Tested on a synthetic video; not yet run on a real camera or dog. |
 | Tail, ear and posture tracking (pose model) | Not started. |
+| Indoor tracking (`ml/track.py`) | Written. Tested with simulated beacon signals; not yet run against a real collar. No GPS. See [`docs/TRACKING.md`](docs/TRACKING.md). |
 | Housing for the carrier-board build | Modelled; not yet printed. See [`hardware/enclosure/`](hardware/enclosure/). |
 | Starter dataset and model | **Synthetic**, for running the scripts only; says nothing about a real dog. See [`data/starter/`](data/starter/). |
 | Mobile app, on-collar speaker, real dog dataset | Not started. |
@@ -87,6 +88,7 @@ dog-mood-collar-vlog/
 │   ├── ble_data_logger.py            # Record sensor data + label moods
 │   ├── train_mood_model.py           # Train and test the classifier
 │   ├── live_predict.py               # Say his mood live
+│   ├── track.py                      # Which beacon he is at, a log, and an out-of-range alarm
 │   ├── make_starter_dataset.py       # Writes the synthetic starter data
 │   ├── starter_model/                # Model trained on the synthetic data
 │   ├── camera.py                     # Cage camera tracker
@@ -105,6 +107,7 @@ dog-mood-collar-vlog/
     ├── PH_SHOPPING_LIST.md           # What to buy, and what not to
     ├── MOODS.md                      # Sensor, signal, features and phrase for each mood
     ├── CAMERA.md                     # Cage camera setup and labelling from video
+    ├── TRACKING.md                   # Indoor tracking, and what it cannot do
     ├── images/                       # Drawings
     └── ...                           # Older checklists*
 ```
@@ -158,6 +161,12 @@ The model and its confusion matrix go to `ml/trained_models/`.
 python ml/live_predict.py
 ```
 Every 4 seconds it prints the mood for the last 8 seconds, averaged over the last three predictions. When the model is at least 50% confident it speaks one of the phrases through the computer; otherwise it prints "not sure". The `fed`, `went`, `away` and `home` commands work here too. Add `--mute` to print without speaking.
+
+### 5. Where is he?
+```bash
+python ml/track.py
+```
+With the three beacons in place, it prints which one he is nearest (bowl, door or bed), logs his visits to `data/track_log.csv`, and raises an alarm when the collar goes out of Bluetooth range. This is tracking inside the home only; there is no GPS. See [`docs/TRACKING.md`](docs/TRACKING.md).
 
 ### Optional: heart rate (larger dogs only)
 A chest strap is too big and heavy for a teacup puppy; skip this section for him.

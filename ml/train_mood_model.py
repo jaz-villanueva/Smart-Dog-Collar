@@ -28,6 +28,7 @@ from features import (HOP, MISSING, SAMPLE_HZ, WINDOW, WINDOW_SECONDS,
                       compute_window_features)
 
 DATA_FILE = DATA_DIR / "sensor_readings.csv"
+RECORDINGS_DIR = DATA_DIR / "recordings"
 OUTPUT_DIR = ML_DIR / "trained_models"
 
 MAX_GAP_SAMPLES = 10  # a longer run of dropped samples splits the recording
@@ -36,8 +37,9 @@ CONFIDENCE = 0.5      # below this, the live script says "not sure" instead of g
 
 
 class MoodModelTrainer:
-    def __init__(self, data_file, output_dir, use_context=True):
+    def __init__(self, data_file, output_dir, use_context=True, include_recordings=True):
         self.data_file = Path(data_file)
+        self.include_recordings = include_recordings
         self.output_dir = Path(output_dir)
         self.use_context = use_context
         self.df = None
@@ -48,12 +50,19 @@ class MoodModelTrainer:
         """Load sensor data from CSV"""
         print("[DATA] Loading sensor readings...")
 
-        if not self.data_file.exists():
+        # Live-labelled data, plus every recording labelled from video
+        files = [self.data_file] if self.data_file.exists() else []
+        if self.include_recordings:
+            files += sorted(RECORDINGS_DIR.glob("*/labelled.csv"))
+        if not files:
             print(f"[ERROR] Data file not found: {self.data_file}")
             print("[ERROR] Run data logger first: python ble_data_logger.py")
             return False
+        for file in files:
+            print(f"[DATA]   {file}")
 
-        self.df = pd.read_csv(self.data_file, dtype={"session_id": str})
+        self.df = pd.concat([pd.read_csv(f, dtype={"session_id": str}) for f in files],
+                            ignore_index=True)
         self.df = self.df[self.df["mood"].isin(MOODS)]
         print(f"[DATA] Loaded {len(self.df)} labelled samples "
               f"({len(self.df) / SAMPLE_HZ / 60:.1f} minutes)")
@@ -168,6 +177,7 @@ class MoodModelTrainer:
             "feature_names": self.feature_names,
             "use_context": self.use_context,
             "uses_heart_rate": bool((X["hr_mean"] != MISSING).any()),
+            "uses_camera": bool((X["cam_x"] != MISSING).any()),
             "confidence_threshold": CONFIDENCE,
             **scores,
         }
@@ -179,13 +189,17 @@ class MoodModelTrainer:
 
 def main():
     parser = argparse.ArgumentParser(description="Train the dog mood classifier")
-    parser.add_argument("--data", default=DATA_FILE, help="labelled CSV from the data logger")
+    parser.add_argument("--data", default=None,
+                        help="train on this CSV only (default: all live-labelled and "
+                             "video-labelled data)")
     parser.add_argument("--out", default=OUTPUT_DIR, help="folder for the model and plots")
     parser.add_argument("--no-context", action="store_true",
                         help="ignore time of day, feeding, potty and owner-away columns")
     args = parser.parse_args()
 
-    trainer = MoodModelTrainer(args.data, args.out, use_context=not args.no_context)
+    trainer = MoodModelTrainer(args.data or DATA_FILE, args.out,
+                               use_context=not args.no_context,
+                               include_recordings=args.data is None)
 
     if not trainer.load_data():
         return 1

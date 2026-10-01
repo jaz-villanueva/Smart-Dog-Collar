@@ -7,6 +7,7 @@ says the dog's mood as an English phrase through the computer's speakers.
 It only speaks when the model is confident; otherwise it prints its best guess.
 
     python live_predict.py               # collar only
+    python live_predict.py --camera 0    # collar + cage camera
     python live_predict.py --hr Polar    # collar + heart-rate chest strap
 """
 
@@ -84,11 +85,11 @@ class MoodPredictor:
 
 
 class LiveSession:
-    def __init__(self, predictor, mute=False):
+    def __init__(self, predictor, mute=False, camera=None):
         self.predictor = predictor
         self.threshold = predictor.metadata["confidence_threshold"]
         self.mute = mute
-        self.stream = CollarStream(self.on_row)
+        self.stream = CollarStream(self.on_row, camera=camera)
         self.spoken_mood = None
         self.spoken_time = 0.0
 
@@ -128,6 +129,8 @@ def main():
     parser.add_argument("--model-dir", default=MODEL_DIR, help="folder written by train_mood_model.py")
     parser.add_argument("--hr", metavar="NAME",
                         help="also use a BLE heart-rate strap whose name contains NAME, e.g. Polar")
+    parser.add_argument("--camera", metavar="SOURCE",
+                        help="also use the cage camera: an index such as 0, or a stream URL")
     parser.add_argument("--mute", action="store_true", help="print phrases without speaking them")
     args = parser.parse_args()
 
@@ -145,12 +148,24 @@ def main():
         print("[MODEL] Warning: this model was trained with a heart-rate strap. "
               "Without --hr its guesses will be worse.")
 
+    if metadata.get("uses_camera") and not args.camera:
+        print("[MODEL] Warning: this model was trained with the cage camera. "
+              "Without --camera its guesses will be worse.")
+
     require_bleak()
-    session = LiveSession(MoodPredictor(model, metadata), mute=args.mute)
+    camera = None
+    if args.camera:
+        from camera import CameraTracker
+        camera = CameraTracker(args.camera).start()
+
+    session = LiveSession(MoodPredictor(model, metadata), mute=args.mute, camera=camera)
     try:
         asyncio.run(session.stream.run(session.command_loop, args.hr))
     except KeyboardInterrupt:
         print("\n[INTERRUPT] Stopped.")
+    finally:
+        if camera:
+            camera.stop()
     return 0
 
 

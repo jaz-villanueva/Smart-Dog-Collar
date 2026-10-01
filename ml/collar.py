@@ -47,6 +47,8 @@ EVENTS = {
 
 BAND_COLUMNS = [f"band_{i}" for i in range(NUM_BANDS)]
 BEACON_COLUMNS = [f"rssi_{name}" for name in BEACONS]
+# Where the cage camera sees him, as fractions of the picture; blank without a camera
+CAMERA_COLUMNS = ["cam_x", "cam_y", "cam_w", "cam_h", "cam_area", "cam_motion"]
 SENSOR_COLUMNS = [
     "sample",
     "accel_x", "accel_y", "accel_z",
@@ -54,6 +56,7 @@ SENSOR_COLUMNS = [
     "audio_rms", "dom_freq_hz", "zcr", "flags",
     *BAND_COLUMNS,
     *BEACON_COLUMNS, "battery_v",
+    *CAMERA_COLUMNS,
     "heart_rate", "rr_ms",
     "hour", "mins_since_fed", "mins_since_potty", "owner_away",
 ]
@@ -143,11 +146,15 @@ class Context:
 
 
 class CollarStream:
-    """Receives collar packets (and optional heart rate) and hands complete rows to on_row."""
+    """Receives collar packets (and optional heart rate) and hands complete rows to on_row.
 
-    def __init__(self, on_row, context=None):
+    camera is an optional camera.CameraTracker whose latest result is added to each row.
+    """
+
+    def __init__(self, on_row, context=None, camera=None):
         self.on_row = on_row
         self.context = context or Context()
+        self.camera = camera
         self.last_seq = None
         self.dropped = 0
         self.battery_v = ""
@@ -171,8 +178,10 @@ class CollarStream:
 
         now = time.time()
         context = self.context.values(now)
+        seen = self.camera.latest() if self.camera else dict.fromkeys(CAMERA_COLUMNS, "")
         fresh = now - self.heart_rate_time < HR_STALE_SECONDS
         for row in rows:
+            row.update(seen)
             row["heart_rate"] = self.heart_rate if fresh else ""
             row["rr_ms"] = round(self.rr_queue.popleft(), 1) if self.rr_queue else ""
             row.update(context)

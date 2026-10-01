@@ -35,7 +35,17 @@ They tell the model whether he is at his bowl, the door or his bed, which is the
 | Any ESP32 board | The ESP32-WROOM you already own works as one. "ESP32-C3 Super Mini" boards are the cheapest. | 3 (buy 2) | ₱150–300 each (*estimate*) | Shopee: "ESP32 C3 super mini" |
 | USB phone charger + cable | One per beacon | 3 | probably owned | — |
 
-## 3. Bench prototype (optional)
+## 3. Cage camera (optional)
+
+It adds his position, outline and movement in the cage, and lets you label recordings from video. Setup is in [`CAMERA.md`](CAMERA.md).
+
+| Item | What to look for | Qty | Price | Where |
+|------|------------------|-----|-------|-------|
+| Camera | Either a USB webcam, or a Wi-Fi camera that offers a local **RTSP** stream (many cloud-only cameras do not). Infrared night vision if you want to see him in the dark. | 1 | ₱500–1,500 (*estimate*) | Shopee / Lazada: "USB webcam 1080p" or "IP camera RTSP" |
+| Mount or clamp | Must hold the camera rigidly above the cage | 1 | ₱100–300 (*estimate*) | Shopee: "webcam clamp mount" |
+| Bedding in a colour unlike his coat | The tracker needs contrast to see him | 1 | probably owned | — |
+
+## 4. Bench prototype (optional)
 
 Only if you want to develop on the ESP32 before the XIAO arrives. This build is too heavy for him to wear. The full list with quantities is in [`hardware/BOM.csv`](../hardware/BOM.csv).
 
